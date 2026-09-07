@@ -2,13 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "@/actions/auth";
+import type { Notification } from "@/lib/data/notifications";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/nav/notification-bell";
 import { NAV_ITEMS } from "./nav-items";
 
-export function DesktopNav() {
+export function DesktopNav({
+  notifications,
+  unreadCount,
+  isAdmin,
+}: {
+  notifications: Notification[];
+  unreadCount: number;
+  isAdmin: boolean;
+}) {
   const pathname = usePathname();
 
   return (
@@ -39,12 +49,27 @@ export function DesktopNav() {
             })}
           </nav>
         </div>
-        <form action={signOutAction}>
-          <Button variant="ghost" size="sm" type="submit">
-            <LogOut className="size-4" />
-            Sign out
-          </Button>
-        </form>
+        <div className="flex items-center gap-1">
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="sm"
+              render={
+                <Link href="/admin">
+                  <ShieldCheck className="size-4" />
+                  Admin
+                </Link>
+              }
+            />
+          )}
+          <NotificationBell notifications={notifications} unreadCount={unreadCount} />
+          <form action={signOutAction}>
+            <Button variant="ghost" size="sm" type="submit">
+              <LogOut className="size-4" />
+              Sign out
+            </Button>
+          </form>
+        </div>
       </div>
     </header>
   );

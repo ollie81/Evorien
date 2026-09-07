@@ -33,3 +33,25 @@ export async function requireUserId() {
   if (!userId) redirect("/sign-in");
   return userId;
 }
+
+/**
+ * Row Level Security already blocks a non-admin's writes at the database
+ * level — this is the belt-and-suspenders check inside the Server Action
+ * itself, per the rule that every action must independently re-verify the
+ * caller rather than trusting that only admin UI links to it.
+ */
+export const isCurrentUserAdmin = cache(async () => {
+  const userId = await getUserId();
+  if (!userId) return false;
+  const supabase = await createClient();
+  const { data } = await supabase.from("profiles").select("is_admin").eq("id", userId).maybeSingle();
+  return data?.is_admin ?? false;
+});
+
+/** Use at the top of every admin-only Server Action. Throws for non-admins. */
+export async function requireAdmin() {
+  const admin = await isCurrentUserAdmin();
+  if (!admin) {
+    throw new Error("Unauthorized: admin access required.");
+  }
+}

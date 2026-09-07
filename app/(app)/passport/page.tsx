@@ -13,6 +13,7 @@ import { PillarBadge } from "@/components/shared/pillar-badge";
 import { SectionHeader } from "@/components/shared/section-header";
 import { StatTile } from "@/components/shared/stat-tile";
 import { EmptyState } from "@/components/shared/empty-state";
+import { RequestVerificationDialog } from "@/components/passport/request-verification-dialog";
 
 export const metadata: Metadata = { title: "Passport" };
 
@@ -84,6 +85,10 @@ export default async function PassportPage() {
             <StatTile value={verificationLevelLabel(profile.verification_level)} label="Verification" />
           </CardContent>
         </Card>
+      </div>
+
+      <div>
+        <RequestVerificationDialog userId={profile.id} />
       </div>
 
       {profile.roles.length > 0 && (

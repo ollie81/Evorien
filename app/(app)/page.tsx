@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Compass, Hammer, Sparkles } from "lucide-react";
+import { Compass, Hammer, MessageSquare, Sparkles } from "lucide-react";
 import { getMyProfile } from "@/lib/data/profile";
 import { getNetworkStats, getRecentOpportunities, getRecentProjects } from "@/lib/data/home";
+import { getFeedPosts } from "@/lib/data/community";
+import { getUserId } from "@/lib/auth";
 import { profileDisplayName } from "@/lib/types";
 import { opportunityTypeLabel } from "@/lib/constants/roles";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,15 +13,18 @@ import { StatTile } from "@/components/shared/stat-tile";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PillarBadge } from "@/components/shared/pillar-badge";
 import { Button } from "@/components/ui/button";
+import { PostCard } from "@/components/community/post-card";
 
 export const metadata: Metadata = { title: "Home" };
 
 export default async function HomePage() {
-  const [profile, stats, projects, opportunities] = await Promise.all([
+  const userId = await getUserId();
+  const [profile, stats, projects, opportunities, posts] = await Promise.all([
     getMyProfile(),
     getNetworkStats(),
     getRecentProjects(),
     getRecentOpportunities(),
+    getFeedPosts(userId, 3),
   ]);
 
   return (
@@ -103,6 +108,28 @@ export default async function HomePage() {
                   <p className="text-sm text-muted-foreground">{opportunityTypeLabel(o.type)}</p>
                 </CardContent>
               </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <SectionHeader
+          title="Community"
+          action={<Button variant="ghost" size="sm" render={<Link href="/community">See all</Link>} />}
+        />
+        {posts.length === 0 ? (
+          <EmptyState
+            icon={MessageSquare}
+            title="No community updates yet"
+            message="Share progress, ask for help, or celebrate a win with the network."
+            actionLabel="Post something"
+            actionHref="/community"
+          />
+        ) : (
+          <div className="space-y-2">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
             ))}
           </div>
         )}

@@ -98,27 +98,25 @@ Open <http://localhost:3000> in your browser.
 2. Complete onboarding — this generates your Evorien Passport
    (`EVR-000001`, and so on, in the order people join).
 3. Create a project from the **Build** tab, look yourself up from
-   **Discover**, and check out **The City** for the long-term vision.
+   **Discover**, check out **The City** for the long-term vision, and post
+   an update from **Community** (linked from Home).
 
-### Making yourself an admin (optional, for testing)
+### Making yourself an admin (required to see the Admin panel)
 
-There's no admin panel UI yet (see "What's next" below). To flip your own
-account to admin for testing:
+There's an Admin panel in the app (Overview, Verification, Reports, Cities,
+Charter, Governance — linked from the top nav once you're an admin), but
+nobody starts as an admin. To flip your own account to admin:
 
 1. In Supabase, open **Table Editor -> profiles**.
 2. Find your row (match it by email in **Authentication -> Users** to get
    your user id, or just look for your name once you've onboarded).
 3. Edit the `is_admin` column to `true`.
+4. Reload the app — an "Admin" link appears in the top nav (desktop).
 
-Admins can also add the first entries to `cities` and `charter_versions`
-this same way (**Table Editor**, or **SQL Editor** for more control) — the
-app deliberately never invents this content for you. For example, to
-publish your first Freedom Charter version:
-
-```sql
-insert into public.charter_versions (version, title, content, is_current, published_at)
-values ('v0.1', 'Evorien Freedom Charter', 'Write your real charter text here.', true, now());
-```
+From there, publishing the first Freedom Charter version and adding the
+first City location both have real forms under **Admin -> Charter** and
+**Admin -> Cities** — the app deliberately never invents this content for
+you, but you no longer need to write SQL to add it either.
 
 ---
 
@@ -143,20 +141,27 @@ values ('v0.1', 'Evorien Freedom Charter', 'Write your real charter text here.',
 
 ```
 app/
-  (app)/           The signed-in shell: Home, Discover, Build, City, Passport
+  (app)/           The signed-in shell: Home, Discover, Build, City, Passport,
+                    Community, Notifications, Admin
                     (layout.tsx here gates onboarding completion)
+  (app)/admin/      Admin-only panel (layout.tsx gates on profiles.is_admin):
+                    Overview, Verification, Reports, Cities, Charter, Governance
   sign-in/ sign-up/ Auth pages
   onboarding/       First-run flow that creates a Passport
   auth/callback/    Handles Supabase email confirmation links
-actions/            Server Actions — all database writes go through here
+actions/            Server Actions — all database writes go through here.
+                    Every admin action independently re-checks requireAdmin()
+                    rather than trusting that only admin UI calls it.
 lib/
   supabase/         Browser + server Supabase clients, proxy session refresh
   data/             Read queries (Data Access Layer), organized by feature
-  auth.ts           getUserId() / requireUserId() — the source of truth for "who is this?"
+  auth.ts           getUserId() / requireUserId() / requireAdmin() — the
+                    source of truth for "who is this, and can they do that?"
   constants/        Pillars, roles, contribution types, etc.
 components/
   ui/               shadcn/ui primitives (generated — safe to customize further)
   nav/ shared/ auth/ onboarding/ passport/ build/ city/ discover/
+  community/ notifications/ admin/
                     Feature UI, organized to match the app/ structure
 proxy.ts            Next.js 16's replacement for middleware.ts — refreshes
                     the auth session and redirects signed-out visitors
@@ -171,23 +176,28 @@ the browser — only the public anon key, loaded via `NEXT_PUBLIC_` env vars.
 
 ## 8. What's built vs. what's next
 
-**Built (Phase A/B foundation):** project scaffold, full database schema
-with Row Level Security on every table, authentication, the 5-section
-navigation (desktop top nav, mobile bottom nav), onboarding into a real
-Passport, a live (never fabricated) Home dashboard, Discover search,
-project creation and joining, opportunities and contributions, and the
-full City section (Vision, Charter, Governance voting, Roadmap,
-Locations).
+**Built:** project scaffold, full database schema with Row Level Security
+on every table, authentication, the full navigation (desktop top nav,
+mobile bottom tabs + top bar), onboarding into a real Passport, a live
+(never fabricated) Home dashboard, Discover search, project creation and
+joining, opportunities and contributions, the full City section (Vision,
+Charter, Governance voting, Roadmap, Locations), a Community feed (posts,
+comments, likes), in-app notifications (bell in the nav + a full page),
+content reporting, member-submitted verification requests (with private
+evidence upload to Supabase Storage), and an admin panel — gated on
+`profiles.is_admin`, both by a layout redirect and independently inside
+every admin Server Action — covering verification review (approve/reject,
+with a time-limited signed URL to view evidence), report moderation,
+adding/updating City locations, publishing Charter versions and reviewing
+member-proposed changes, and opening new governance proposals for voting.
 
-**Not built yet, by design (see the phased roadmap):**
-- Admin panel UI (Phase F) — admin actions currently go through the
-  Supabase dashboard directly, as shown above.
-- Community feed (posts/comments/likes) beyond the database schema.
-- Verification review workflow UI (the `verifications` table and storage
-  bucket exist; there's no reviewer screen yet).
-- Notifications UI (a connection request already writes to the
-  `notifications` table via a database trigger).
+**Not built yet, by design:**
 - Automated tests — not yet set up for this Next.js codebase.
+- Reputation events aren't awarded automatically yet (e.g. accepting a
+  contribution or completing a project doesn't yet insert a
+  `reputation_events` row) — the ledger and the public score view exist,
+  the triggering actions don't.
+- Analytics dashboard beyond the admin overview's live counters.
 - Payments / premium subscriptions (Phase G) — deliberately not built into
   V1 per the product principles: no fundraising, no token, no investment
   claims.
