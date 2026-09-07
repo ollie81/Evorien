@@ -6,6 +6,10 @@ governance laboratory in one app. See the in-app **City** section for the
 long-term vision; everything else in the app is designed to be valuable on
 its own, today.
 
+Built with **Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui**,
+backed by **Supabase** (Postgres, Auth, Storage, Row Level Security), and
+deployable to **Vercel**.
+
 This README is written for a founder who is not a professional developer.
 Follow it top to bottom the first time you set this project up.
 
@@ -13,13 +17,13 @@ Follow it top to bottom the first time you set this project up.
 
 ## 1. What you need installed
 
-- **Flutter SDK** — <https://docs.flutter.dev/get-started/install>. After
-  installing, run `flutter doctor` in a terminal and follow any instructions
-  it gives you.
+- **Node.js 20.9 or later** — <https://nodejs.org> (download the "LTS" version).
 - A free **Supabase** account — <https://supabase.com>. Supabase is the
   database and login system behind Evorien.
-- A code editor. [VS Code](https://code.visualstudio.com/) with the "Flutter"
-  extension is the easiest for beginners.
+- A free **Vercel** account — <https://vercel.com> — for putting the site
+  online. You don't need this to develop locally.
+- A code editor. [VS Code](https://code.visualstudio.com/) is the easiest
+  for beginners.
 
 ---
 
@@ -59,30 +63,29 @@ system. Nothing here contains real user data — it's just structure.
      your data, not this key.
 3. **Never** copy the **service_role** / **secret** key into this app,
    anywhere. That key bypasses every security rule and must only ever be
-   used from a trusted server, never from Flutter.
+   used from a trusted server, never shipped to a browser.
 
 ---
 
-## 3. Configure the app
+## 3. Configure the app locally
 
-1. In the project root, copy `.env.example` to a new file named `.env`
-   (same folder).
-2. Open `.env` and paste in your **Project URL** and **anon public key**
-   from the step above.
-3. `.env` is already listed in `.gitignore` — it will never be committed or
-   pushed to GitHub. Keep it that way.
+1. In the project root, copy `.env.example` to a new file named
+   `.env.local` (same folder).
+2. Open `.env.local` and paste in your **Project URL** and **anon public
+   key** from the step above.
+3. `.env.local` is already listed in `.gitignore` — it will never be
+   committed or pushed to GitHub. Keep it that way.
 
 ---
 
 ## 4. Run the app
 
 ```bash
-flutter pub get
-flutter run -d chrome   # runs in a browser — easiest way to try it first
+npm install
+npm run dev
 ```
 
-To run on a connected Android phone or an emulator, use `flutter run`
-instead and pick the device when prompted. iOS requires a Mac with Xcode.
+Open <http://localhost:3000> in your browser.
 
 ---
 
@@ -119,37 +122,62 @@ values ('v0.1', 'Evorien Freedom Charter', 'Write your real charter text here.',
 
 ---
 
-## 6. Project structure
+## 6. Deploy to Vercel
 
-```
-lib/
-  core/            Design system, routing, Supabase bootstrap, shared widgets
-  features/
-    auth/          Sign up / sign in
-    onboarding/    First-run flow that creates a Passport
-    home/          Personalized home feed + live "Founding Community" stats
-    discover/      Find people and projects
-    build/         Projects, opportunities, contributions
-    passport/      The Evorien Passport (identity, reputation, skills)
-    city/          Vision, Charter, Governance, Roadmap, Locations
-    shell/         The 5-tab bottom navigation
-supabase/
-  migrations/      The entire database schema, in run order
-```
-
-No secrets are ever stored in `lib/` — only the public anon key, loaded at
-runtime from `.env`.
+1. Push this repository to GitHub (if it isn't already there).
+2. Go to <https://vercel.com/new> and import the repository. Vercel
+   auto-detects Next.js — you don't need to change any build settings.
+3. Before the first deploy, open **Environment Variables** in the import
+   screen (or later under **Project Settings -> Environment Variables**)
+   and add the same two values from your `.env.local`:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Click **Deploy**. Once it finishes, Vercel gives you a live URL.
+5. In Supabase, open **Authentication -> URL Configuration** and add your
+   Vercel URL (and `https://your-domain/auth/callback`) to the allowed
+   redirect URLs, so email confirmation links work in production.
 
 ---
 
-## 7. What's built vs. what's next
+## 7. Project structure
+
+```
+app/
+  (app)/           The signed-in shell: Home, Discover, Build, City, Passport
+                    (layout.tsx here gates onboarding completion)
+  sign-in/ sign-up/ Auth pages
+  onboarding/       First-run flow that creates a Passport
+  auth/callback/    Handles Supabase email confirmation links
+actions/            Server Actions — all database writes go through here
+lib/
+  supabase/         Browser + server Supabase clients, proxy session refresh
+  data/             Read queries (Data Access Layer), organized by feature
+  auth.ts           getUserId() / requireUserId() — the source of truth for "who is this?"
+  constants/        Pillars, roles, contribution types, etc.
+components/
+  ui/               shadcn/ui primitives (generated — safe to customize further)
+  nav/ shared/ auth/ onboarding/ passport/ build/ city/ discover/
+                    Feature UI, organized to match the app/ structure
+proxy.ts            Next.js 16's replacement for middleware.ts — refreshes
+                    the auth session and redirects signed-out visitors
+supabase/
+  migrations/       The entire database schema, in run order
+```
+
+No secrets are ever stored in `app/`, `components/`, or anything shipped to
+the browser — only the public anon key, loaded via `NEXT_PUBLIC_` env vars.
+
+---
+
+## 8. What's built vs. what's next
 
 **Built (Phase A/B foundation):** project scaffold, full database schema
-with Row Level Security on every table, authentication, the 5-tab
-navigation shell, onboarding into a real Passport, a live (never
-fabricated) Home dashboard, Discover search, project creation and joining,
-opportunities and contributions, and the full City section (Vision,
-Charter, Governance voting, Roadmap, Locations).
+with Row Level Security on every table, authentication, the 5-section
+navigation (desktop top nav, mobile bottom nav), onboarding into a real
+Passport, a live (never fabricated) Home dashboard, Discover search,
+project creation and joining, opportunities and contributions, and the
+full City section (Vision, Charter, Governance voting, Roadmap,
+Locations).
 
 **Not built yet, by design (see the phased roadmap):**
 - Admin panel UI (Phase F) — admin actions currently go through the
@@ -157,17 +185,21 @@ Charter, Governance voting, Roadmap, Locations).
 - Community feed (posts/comments/likes) beyond the database schema.
 - Verification review workflow UI (the `verifications` table and storage
   bucket exist; there's no reviewer screen yet).
-- Notifications UI (events already write to the `notifications` table).
+- Notifications UI (a connection request already writes to the
+  `notifications` table via a database trigger).
+- Automated tests — not yet set up for this Next.js codebase.
 - Payments / premium subscriptions (Phase G) — deliberately not built into
   V1 per the product principles: no fundraising, no token, no investment
   claims.
 
 ---
 
-## 8. Everyday commands
+## 9. Everyday commands
 
 ```bash
-flutter analyze     # static analysis — should report no issues
-flutter test        # runs the test suite
-flutter build web   # production web build, output in build/web
+npm run dev     # local development server, http://localhost:3000
+npm run build   # production build — should complete with no errors
+npm run start   # run the production build locally
+npx eslint .    # lint
+npx tsc --noEmit  # type-check without emitting files
 ```

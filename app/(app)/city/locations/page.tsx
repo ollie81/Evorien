@@ -1,0 +1,39 @@
+import type { Metadata } from "next";
+import { MapPin } from "lucide-react";
+import { getCities } from "@/lib/data/city";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/shared/empty-state";
+
+export const metadata: Metadata = { title: "Locations · The City" };
+
+export default async function CityLocationsPage() {
+  const cities = await getCities();
+
+  if (cities.length === 0) {
+    return (
+      <EmptyState
+        icon={MapPin}
+        title="No locations announced yet"
+        message="Evorien is location-agnostic and may eventually support multiple communities. Nothing is announced today."
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {cities.map((city) => (
+        <Card key={city.id}>
+          <CardContent className="space-y-1.5">
+            <div className="flex items-center justify-between gap-4">
+              <p className="font-medium">{city.name}</p>
+              <Badge variant="secondary">{city.status}</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">{city.country}</p>
+            {city.description && <p className="text-sm">{city.description}</p>}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}

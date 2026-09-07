@@ -1,0 +1,160 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-heading);
+  --color-pillar-technology: var(--pillar-technology);
+  --color-pillar-digital-economy: var(--pillar-digital-economy);
+  --color-pillar-entertainment: var(--pillar-entertainment);
+  --color-pillar-arts: var(--pillar-arts);
+  --color-pillar-tourism: var(--pillar-tourism);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Evorien brand — premium, futuristic, confident. Never generic-social,
+     never crypto-hype, never government-issue. */
+  --background: #f7f7f9;
+  --foreground: #14161c;
+  --card: #ffffff;
+  --card-foreground: #14161c;
+  --popover: #ffffff;
+  --popover-foreground: #14161c;
+  --primary: #5b53f6;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f1f4;
+  --secondary-foreground: #14161c;
+  --muted: #f1f1f4;
+  --muted-foreground: #5b6270;
+  --accent: #eceaff;
+  --accent-foreground: #14161c;
+  --destructive: #d9364a;
+  --border: #e4e5ea;
+  --input: #e4e5ea;
+  --ring: #5b53f6;
+  --chart-1: #5b53f6;
+  --chart-2: #00b8a9;
+  --chart-3: #ff4fa3;
+  --chart-4: #ffa53e;
+  --chart-5: #3ec6ff;
+  --radius: 0.75rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #14161c;
+  --sidebar-primary: #5b53f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eceaff;
+  --sidebar-accent-foreground: #14161c;
+  --sidebar-border: #e4e5ea;
+  --sidebar-ring: #5b53f6;
+
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-space-grotesk);
+
+  /* Pillar accents — stable across light/dark, used for chips and icons. */
+  --pillar-technology: #5b53f6;
+  --pillar-digital-economy: #00b8a9;
+  --pillar-entertainment: #ff4fa3;
+  --pillar-arts: #e8892a;
+  --pillar-tourism: #0091c2;
+}
+
+.dark {
+  --background: #08090d;
+  --foreground: #f4f5f7;
+  --card: #101319;
+  --card-foreground: #f4f5f7;
+  --popover: #12151b;
+  --popover-foreground: #f4f5f7;
+  --primary: #7c74ff;
+  --primary-foreground: #08090d;
+  --secondary: #171b22;
+  --secondary-foreground: #f4f5f7;
+  --muted: #171b22;
+  --muted-foreground: #9aa1ae;
+  --accent: #1c1f3a;
+  --accent-foreground: #f4f5f7;
+  --destructive: #ff5c6a;
+  --border: #262b35;
+  --input: #262b35;
+  --ring: #7c74ff;
+  --chart-1: #7c74ff;
+  --chart-2: #00d9c0;
+  --chart-3: #ff6bb3;
+  --chart-4: #ffb35c;
+  --chart-5: #3ec6ff;
+  --sidebar: #101319;
+  --sidebar-foreground: #f4f5f7;
+  --sidebar-primary: #7c74ff;
+  --sidebar-primary-foreground: #08090d;
+  --sidebar-accent: #1c1f3a;
+  --sidebar-accent-foreground: #f4f5f7;
+  --sidebar-border: #262b35;
+  --sidebar-ring: #7c74ff;
+
+  /* Slightly brighter for contrast on dark surfaces. */
+  --pillar-technology: #7c74ff;
+  --pillar-digital-economy: #00d9c0;
+  --pillar-entertainment: #ff6bb3;
+  --pillar-arts: #ffa53e;
+  --pillar-tourism: #3ec6ff;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-heading;
+  }
+}
