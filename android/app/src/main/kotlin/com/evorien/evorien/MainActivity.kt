@@ -1,0 +1,5 @@
+package com.evorien.evorien
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()
