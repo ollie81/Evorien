@@ -188,11 +188,11 @@ page with team members, editing a project's own details and progress
 completion reputation for every active team member, not just the owner),
 a "Skills needed" list the project's owner/admins curate (add, mark
 filled, remove), opportunities that can be posted standalone or tied to a
-specific project, a full collaboration-application loop on top of them
-(apply with an optional message, withdraw it, the poster accepts or
-rejects — restricted to projects and opportunities you actually
-own or manage, both in the UI and independently in the database), project
-discovery, and a full contribution loop (a member logs one against a
+specific project and whose poster can mark filled, close or reopen, a full
+collaboration-application loop on top of them (apply with an optional
+message, withdraw it, the poster accepts or rejects — restricted to
+projects and opportunities you actually own or manage, both in the UI and
+independently in the database), project discovery, and a full contribution loop (a member logs one against a
 specific project they're active on, the project's owner/admins accept or
 decline it, status is color-coded), the full City section (Vision,
 Charter, Governance voting, Roadmap, Locations), a Community feed (posts,
@@ -200,10 +200,11 @@ comments, likes) built around project updates rather than a generic
 feed — post as a general update or tag one of your own active
 projects, and every project's own page has an Updates section for its
 team — in-app notifications (bell in the nav + a full page), triggered by
-database events rather than polled, covering a new connection request, a
-new application on an opportunity you posted, your own application being
-accepted or rejected, your contribution being accepted or declined, and
-someone joining a project you own — content reporting, member-submitted
+database events rather than polled, covering a new connection request, your
+connection request being accepted, a new application on an opportunity you
+posted, your own application being accepted or rejected, your contribution
+being accepted or declined, and someone joining a project you own — content
+reporting, member-submitted
 verification requests (with private
 evidence upload to Supabase Storage), an admin panel — gated on
 `profiles.is_admin`, both by a layout redirect and independently inside

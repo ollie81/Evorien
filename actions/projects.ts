@@ -388,6 +388,28 @@ export async function respondToApplicationAction(applicationId: string, accept: 
   if (opportunity.project_id) revalidatePath(`/build/${opportunity.project_id}`);
 }
 
+export async function updateOpportunityStatusAction(opportunityId: string, status: "OPEN" | "FILLED" | "CLOSED") {
+  const userId = await requireUserId();
+  const supabase = await createClient();
+
+  const { data: opportunity } = await supabase
+    .from("opportunities")
+    .select("posted_by, project_id")
+    .eq("id", opportunityId)
+    .maybeSingle();
+
+  if (!opportunity || opportunity.posted_by !== userId) {
+    throw new Error("Only the person who posted this opportunity can change its status.");
+  }
+
+  const { error } = await supabase.from("opportunities").update({ status }).eq("id", opportunityId);
+
+  if (error) throw new Error("Could not update this opportunity.");
+
+  revalidatePath("/build");
+  if (opportunity.project_id) revalidatePath(`/build/${opportunity.project_id}`);
+}
+
 // ---------------------------------------------------------------------------
 // PROJECT PROGRESS (editing)
 // ---------------------------------------------------------------------------

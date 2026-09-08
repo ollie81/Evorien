@@ -6,6 +6,7 @@ import type { Opportunity } from "@/lib/types";
 import type { OpportunityApplication } from "@/lib/data/projects";
 import { ApplyButton } from "@/components/build/apply-button";
 import { ApplicationReviewActions } from "@/components/build/application-review-actions";
+import { OpportunityStatusControl } from "@/components/build/opportunity-status-control";
 
 export function OpportunityCard({
   opportunity,
@@ -40,6 +41,7 @@ export function OpportunityCard({
         {!isOwner && viewerId && opportunity.status === "OPEN" && (
           <ApplyButton opportunityId={opportunity.id} initialApplication={myApplication ?? null} />
         )}
+        {isOwner && <OpportunityStatusControl opportunityId={opportunity.id} status={opportunity.status} />}
         {isOwner && applications && applications.length > 0 && (
           <div className="space-y-2 border-t border-border pt-3">
             <p className="text-xs font-medium uppercase text-muted-foreground">Applicants</p>
