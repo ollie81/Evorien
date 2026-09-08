@@ -5,6 +5,22 @@ import { redirect } from "next/navigation";
 import { requireUserId } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
+/** Mirrors is_project_team() from the schema — an OWNER/ADMIN can manage the project's skills, opportunities and details. */
+async function isProjectManager(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projectId: string,
+  userId: string
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("project_members")
+    .select("role")
+    .eq("project_id", projectId)
+    .eq("profile_id", userId)
+    .eq("status", "ACTIVE")
+    .maybeSingle();
+  return Boolean(data && (data.role === "OWNER" || data.role === "ADMIN"));
+}
+
 function slugify(name: string) {
   const base = name
     .toLowerCase()
@@ -168,4 +184,253 @@ export async function respondToContributionAction(contributionId: string, accept
 
   revalidatePath(`/build/${contribution.project_id}`);
   revalidatePath("/build");
+}
+
+// ---------------------------------------------------------------------------
+// SKILLS NEEDED
+// ---------------------------------------------------------------------------
+
+export type ProjectSkillFormState = { error?: string } | undefined;
+
+export async function addProjectSkillAction(
+  _prevState: ProjectSkillFormState,
+  formData: FormData
+): Promise<ProjectSkillFormState> {
+  const userId = await requireUserId();
+  const projectId = String(formData.get("projectId") ?? "").trim();
+  const name = String(formData.get("skillName") ?? "").trim();
+  if (!projectId || !name) return { error: "Enter a skill." };
+
+  const supabase = await createClient();
+  if (!(await isProjectManager(supabase, projectId, userId))) {
+    return { error: "Only the project's owner or admins can manage skills needed." };
+  }
+
+  const { data: existing } = await supabase.from("skills").select("id").ilike("name", name).maybeSingle();
+  let skillId = existing?.id as string | undefined;
+
+  if (!skillId) {
+    const { data: created, error: createError } = await supabase
+      .from("skills")
+      .insert({ name })
+      .select("id")
+      .single();
+    if (createError) return { error: "Could not add that skill." };
+    skillId = created.id as string;
+  }
+
+  const { error } = await supabase
+    .from("project_skills")
+    .upsert({ project_id: projectId, skill_id: skillId }, { onConflict: "project_id,skill_id" });
+
+  if (error) return { error: "Could not add that skill." };
+
+  revalidatePath(`/build/${projectId}`);
+  return undefined;
+}
+
+export async function toggleProjectSkillFilledAction(projectSkillId: string, projectId: string, filled: boolean) {
+  const userId = await requireUserId();
+  const supabase = await createClient();
+  if (!(await isProjectManager(supabase, projectId, userId))) {
+    throw new Error("Only the project's owner or admins can manage skills needed.");
+  }
+
+  const { error } = await supabase
+    .from("project_skills")
+    .update({ is_filled: filled })
+    .eq("id", projectSkillId)
+    .eq("project_id", projectId);
+
+  if (error) throw new Error("Could not update this skill.");
+  revalidatePath(`/build/${projectId}`);
+}
+
+export async function removeProjectSkillAction(projectSkillId: string, projectId: string) {
+  const userId = await requireUserId();
+  const supabase = await createClient();
+  if (!(await isProjectManager(supabase, projectId, userId))) {
+    throw new Error("Only the project's owner or admins can manage skills needed.");
+  }
+
+  const { error } = await supabase
+    .from("project_skills")
+    .delete()
+    .eq("id", projectSkillId)
+    .eq("project_id", projectId);
+
+  if (error) throw new Error("Could not remove this skill.");
+  revalidatePath(`/build/${projectId}`);
+}
+
+// ---------------------------------------------------------------------------
+// OPPORTUNITIES + APPLICATIONS ("collaboration applications")
+// ---------------------------------------------------------------------------
+
+export type CreateOpportunityFormState = { error?: string; success?: boolean } | undefined;
+
+export async function createOpportunityAction(
+  _prevState: CreateOpportunityFormState,
+  formData: FormData
+): Promise<CreateOpportunityFormState> {
+  const userId = await requireUserId();
+
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const type = String(formData.get("type") ?? "COLLABORATION").trim();
+  const location = String(formData.get("location") ?? "").trim();
+  const isRemote = formData.get("isRemote") === "on";
+  const rawProjectId = String(formData.get("projectId") ?? "").trim();
+  const projectId = rawProjectId === "none" ? "" : rawProjectId;
+
+  if (!title || !description) {
+    return { error: "Add a title and description." };
+  }
+
+  const supabase = await createClient();
+
+  if (projectId && !(await isProjectManager(supabase, projectId, userId))) {
+    return { error: "You can only post opportunities for projects you own or manage." };
+  }
+
+  const { error } = await supabase.from("opportunities").insert({
+    posted_by: userId,
+    project_id: projectId || null,
+    title,
+    description,
+    type,
+    location: location || null,
+    is_remote: isRemote,
+  });
+
+  if (error) return { error: "Could not post this opportunity." };
+
+  revalidatePath("/build");
+  if (projectId) revalidatePath(`/build/${projectId}`);
+  return { success: true };
+}
+
+export type ApplyActionState = { error?: string; id?: string } | undefined;
+
+export async function applyToOpportunityAction(opportunityId: string, message: string): Promise<ApplyActionState> {
+  const userId = await requireUserId();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("applications")
+    .insert({ opportunity_id: opportunityId, applicant_id: userId, message: message || null })
+    .select("id")
+    .single();
+
+  if (error) {
+    return {
+      error:
+        error.code === "23505" ? "You've already applied to this opportunity." : "Could not submit your application.",
+    };
+  }
+
+  revalidatePath("/build");
+  return { id: data.id as string };
+}
+
+export async function withdrawApplicationAction(applicationId: string): Promise<ApplyActionState> {
+  const userId = await requireUserId();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("applications")
+    .update({ status: "WITHDRAWN" })
+    .eq("id", applicationId)
+    .eq("applicant_id", userId);
+
+  if (error) return { error: "Could not withdraw this application." };
+
+  revalidatePath("/build");
+  return undefined;
+}
+
+export async function respondToApplicationAction(applicationId: string, accept: boolean) {
+  const userId = await requireUserId();
+  const supabase = await createClient();
+
+  const { data: application } = await supabase
+    .from("applications")
+    .select("opportunity_id, opportunities(posted_by, project_id)")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  const opportunity = application?.opportunities as unknown as
+    | { posted_by: string; project_id: string | null }
+    | null;
+
+  if (!opportunity || opportunity.posted_by !== userId) {
+    throw new Error("Only the person who posted this opportunity can review applications.");
+  }
+
+  const { error } = await supabase
+    .from("applications")
+    .update({ status: accept ? "ACCEPTED" : "REJECTED" })
+    .eq("id", applicationId);
+
+  if (error) throw new Error("Could not update this application.");
+
+  revalidatePath("/build");
+  if (opportunity.project_id) revalidatePath(`/build/${opportunity.project_id}`);
+}
+
+// ---------------------------------------------------------------------------
+// PROJECT PROGRESS (editing)
+// ---------------------------------------------------------------------------
+
+export type UpdateProjectFormState = { error?: string } | undefined;
+
+export async function updateProjectAction(
+  _prevState: UpdateProjectFormState,
+  formData: FormData
+): Promise<UpdateProjectFormState> {
+  const userId = await requireUserId();
+  const projectId = String(formData.get("projectId") ?? "").trim();
+  if (!projectId) return { error: "Missing project." };
+
+  const supabase = await createClient();
+  if (!(await isProjectManager(supabase, projectId, userId))) {
+    return { error: "Only the project's owner or admins can edit it." };
+  }
+
+  const name = String(formData.get("name") ?? "").trim();
+  const tagline = String(formData.get("tagline") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const pillarCode = String(formData.get("pillarCode") ?? "").trim();
+  const stage = String(formData.get("stage") ?? "IDEA").trim();
+  const status = String(formData.get("status") ?? "ACTIVE").trim();
+  const lookingFor = String(formData.get("lookingFor") ?? "").trim();
+  const website = String(formData.get("website") ?? "").trim();
+  const country = String(formData.get("country") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
+
+  if (name.length < 2) {
+    return { error: "Enter a project name." };
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      name,
+      tagline: tagline || null,
+      description: description || null,
+      pillar_code: pillarCode || null,
+      stage,
+      status,
+      looking_for: lookingFor || null,
+      website: website || null,
+      country: country || null,
+      city: city || null,
+    })
+    .eq("id", projectId);
+
+  if (error) return { error: "Could not save changes." };
+
+  revalidatePath(`/build/${projectId}`);
+  revalidatePath("/build");
+  redirect(`/build/${projectId}`);
 }

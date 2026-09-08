@@ -76,6 +76,8 @@ export interface ProjectMember {
 
 export interface Opportunity {
   id: string;
+  posted_by: string;
+  project_id: string | null;
   title: string;
   description: string;
   type: string;

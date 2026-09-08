@@ -2,8 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Hammer, HeartHandshake, Sparkles } from "lucide-react";
 import { requireUserId } from "@/lib/auth";
-import { getMyContributions, getMyProjects, getOpenOpportunities } from "@/lib/data/projects";
-import { contributionTypeLabel, opportunityTypeLabel, projectStageLabel } from "@/lib/constants/roles";
+import {
+  getMyContributions,
+  getMyProjects,
+  getOpenOpportunities,
+  getMyApplicationsMap,
+  getApplicationsForPostedOpportunities,
+  groupApplicationsByOpportunity,
+} from "@/lib/data/projects";
+import { contributionTypeLabel, projectStageLabel } from "@/lib/constants/roles";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +18,8 @@ import { PillarBadge } from "@/components/shared/pillar-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { TabLink } from "@/components/build/tab-link";
 import { LogContributionDialog } from "@/components/build/log-contribution-dialog";
+import { OpportunityCard } from "@/components/build/opportunity-card";
+import { CreateOpportunityDialog } from "@/components/build/create-opportunity-dialog";
 
 export const metadata: Metadata = { title: "Build" };
 
@@ -44,7 +53,7 @@ export default async function BuildPage({
       </div>
 
       {tab === "projects" && <MyProjectsTab userId={userId} />}
-      {tab === "opportunities" && <OpportunitiesTab />}
+      {tab === "opportunities" && <OpportunitiesTab userId={userId} />}
       {tab === "contributions" && <ContributionsTab userId={userId} />}
     </div>
   );
@@ -86,32 +95,42 @@ async function MyProjectsTab({ userId }: { userId: string }) {
   );
 }
 
-async function OpportunitiesTab() {
-  const opportunities = await getOpenOpportunities();
-
-  if (opportunities.length === 0) {
-    return (
-      <EmptyState
-        icon={Sparkles}
-        title="No opportunities posted yet"
-        message="Jobs, collaborations, grants and events from members will show up here."
-      />
-    );
-  }
+async function OpportunitiesTab({ userId }: { userId: string }) {
+  const [opportunities, myProjects, myApplications, postedApplications] = await Promise.all([
+    getOpenOpportunities(),
+    getMyProjects(userId),
+    getMyApplicationsMap(userId),
+    getApplicationsForPostedOpportunities(userId),
+  ]);
+  const applicationsByOpportunity = groupApplicationsByOpportunity(postedApplications);
+  const managedProjects = myProjects
+    .filter((p) => p.my_role === "OWNER" || p.my_role === "ADMIN")
+    .map((p) => ({ id: p.id, name: p.name }));
 
   return (
-    <div className="space-y-2">
-      {opportunities.map((o) => (
-        <Card key={o.id}>
-          <CardContent className="space-y-1.5">
-            <p className="font-medium">{o.title}</p>
-            <p className="text-sm text-muted-foreground">{opportunityTypeLabel(o.type)}</p>
-            {o.description && (
-              <p className="line-clamp-2 text-sm text-muted-foreground">{o.description}</p>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <CreateOpportunityDialog projects={managedProjects} />
+      </div>
+      {opportunities.length === 0 ? (
+        <EmptyState
+          icon={Sparkles}
+          title="No opportunities posted yet"
+          message="Jobs, collaborations, grants and events from members will show up here."
+        />
+      ) : (
+        <div className="space-y-2">
+          {opportunities.map((o) => (
+            <OpportunityCard
+              key={o.id}
+              opportunity={o}
+              viewerId={userId}
+              myApplication={myApplications.get(o.id) ?? null}
+              applications={applicationsByOpportunity.get(o.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

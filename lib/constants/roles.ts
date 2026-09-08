@@ -99,6 +99,21 @@ export function projectStageLabel(code: string) {
   return PROJECT_STAGE_LABELS[code as ProjectStage] ?? code;
 }
 
+export const PROJECT_STATUSES = ["ACTIVE", "PAUSED", "COMPLETED", "ARCHIVED"] as const;
+
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+
+const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
+  ACTIVE: "Active",
+  PAUSED: "Paused",
+  COMPLETED: "Completed",
+  ARCHIVED: "Archived",
+};
+
+export function projectStatusLabel(code: string) {
+  return PROJECT_STATUS_LABELS[code as ProjectStatus] ?? code;
+}
+
 export const OPPORTUNITY_TYPES = [
   "JOB",
   "FREELANCE",

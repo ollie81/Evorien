@@ -182,10 +182,19 @@ mobile bottom tabs + top bar), onboarding into a real Passport, a Home
 dashboard that's a guided first-session checklist until a member has
 declared a skill, connected with someone, joined a project and logged a
 contribution — then becomes a live (never fabricated) dashboard — Discover
-search, project creation and joining, opportunities and a full
-contribution loop (a member logs one against a specific project they're
-active on, the project's owner/admins accept or decline it, status is
-color-coded), the full City section (Vision,
+search, and a complete Build ecosystem: project creation, a public project
+page with team members, editing a project's own details and progress
+(stage and status — marking a project "Completed" is what triggers
+completion reputation for every active team member, not just the owner),
+a "Skills needed" list the project's owner/admins curate (add, mark
+filled, remove), opportunities that can be posted standalone or tied to a
+specific project, a full collaboration-application loop on top of them
+(apply with an optional message, withdraw it, the poster accepts or
+rejects — restricted to projects and opportunities you actually
+own or manage, both in the UI and independently in the database), project
+discovery, and a full contribution loop (a member logs one against a
+specific project they're active on, the project's owner/admins accept or
+decline it, status is color-coded), the full City section (Vision,
 Charter, Governance voting, Roadmap, Locations), a Community feed (posts,
 comments, likes) built around project updates rather than a generic
 feed — post as a general update or tag one of your own active

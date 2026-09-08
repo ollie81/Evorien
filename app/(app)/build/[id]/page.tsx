@@ -1,9 +1,19 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProject, getProjectContributions, getProjectMembers } from "@/lib/data/projects";
+import {
+  getProject,
+  getProjectContributions,
+  getProjectMembers,
+  getProjectOpportunities,
+  getProjectSkills,
+  getMyApplicationsMap,
+  getApplicationsForPostedOpportunities,
+  groupApplicationsByOpportunity,
+} from "@/lib/data/projects";
 import { getProjectPosts } from "@/lib/data/community";
 import { getUserId } from "@/lib/auth";
 import { joinProjectAction } from "@/actions/projects";
-import { projectStageLabel, contributionTypeLabel } from "@/lib/constants/roles";
+import { projectStageLabel, projectStatusLabel, contributionTypeLabel } from "@/lib/constants/roles";
 import { profileDisplayName } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,9 +22,12 @@ import { Button } from "@/components/ui/button";
 import { PillarBadge } from "@/components/shared/pillar-badge";
 import { SectionHeader } from "@/components/shared/section-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { HeartHandshake, MessageSquare } from "lucide-react";
+import { HeartHandshake, MessageSquare, Sparkles } from "lucide-react";
 import { LogContributionDialog } from "@/components/build/log-contribution-dialog";
 import { ContributionReviewActions } from "@/components/build/contribution-review-actions";
+import { ProjectSkills } from "@/components/build/project-skills";
+import { OpportunityCard } from "@/components/build/opportunity-card";
+import { CreateOpportunityDialog } from "@/components/build/create-opportunity-dialog";
 import { PostComposer } from "@/components/community/post-composer";
 import { PostCard } from "@/components/community/post-card";
 
@@ -25,18 +38,24 @@ export default async function ProjectDetailPage({
 }) {
   const { id } = await params;
   const userId = await getUserId();
-  const [project, members, contributions, posts] = await Promise.all([
-    getProject(id),
-    getProjectMembers(id),
-    getProjectContributions(id),
-    getProjectPosts(id, userId),
-  ]);
+  const [project, members, contributions, posts, skills, opportunities, myApplications, postedApplications] =
+    await Promise.all([
+      getProject(id),
+      getProjectMembers(id),
+      getProjectContributions(id),
+      getProjectPosts(id, userId),
+      getProjectSkills(id),
+      getProjectOpportunities(id),
+      userId ? getMyApplicationsMap(userId) : Promise.resolve(new Map<string, { id: string; status: string }>()),
+      userId ? getApplicationsForPostedOpportunities(userId) : Promise.resolve([]),
+    ]);
 
   if (!project) notFound();
 
   const myMembership = members.find((m) => m.profiles?.id === userId);
   const isMember = Boolean(myMembership);
   const canReview = myMembership?.role === "OWNER" || myMembership?.role === "ADMIN";
+  const applicationsByOpportunity = groupApplicationsByOpportunity(postedApplications);
 
   return (
     <div className="space-y-8">
@@ -45,12 +64,17 @@ export default async function ProjectDetailPage({
           <h1 className="font-heading text-2xl font-semibold tracking-tight">{project.name}</h1>
           {project.tagline && <p className="text-muted-foreground">{project.tagline}</p>}
         </div>
-        {project.pillar_code && <PillarBadge code={project.pillar_code} />}
+        <div className="flex items-center gap-2">
+          {project.pillar_code && <PillarBadge code={project.pillar_code} />}
+          {canReview && (
+            <Button variant="outline" size="sm" render={<Link href={`/build/${project.id}/edit`}>Edit</Link>} />
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
         <Badge variant="secondary">{projectStageLabel(project.stage)}</Badge>
-        <Badge variant="outline">{project.status}</Badge>
+        <Badge variant="outline">{projectStatusLabel(project.status)}</Badge>
       </div>
 
       {project.description && (
@@ -68,6 +92,37 @@ export default async function ProjectDetailPage({
           </Card>
         </section>
       )}
+
+      <section className="space-y-3">
+        <SectionHeader title="Skills needed" />
+        <ProjectSkills projectId={project.id} skills={skills} canManage={canReview} />
+      </section>
+
+      <section className="space-y-3">
+        <SectionHeader
+          title="Open roles"
+          action={canReview ? <CreateOpportunityDialog lockedProject={{ id: project.id, name: project.name }} /> : undefined}
+        />
+        {opportunities.length === 0 ? (
+          <EmptyState
+            icon={Sparkles}
+            title="No open roles posted"
+            message="Post a job, collaboration or event tied to this project to attract applicants."
+          />
+        ) : (
+          <div className="space-y-2">
+            {opportunities.map((o) => (
+              <OpportunityCard
+                key={o.id}
+                opportunity={o}
+                viewerId={userId}
+                myApplication={myApplications.get(o.id) ?? null}
+                applications={applicationsByOpportunity.get(o.id)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
 
       {isMember && (
         <section className="space-y-3">
