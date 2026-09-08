@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { SectionHeader } from "@/components/shared/section-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ProposeCharterChangeDialog } from "@/components/city/propose-charter-change-dialog";
+import { DisclaimerBanner } from "@/components/city/disclaimer-banner";
 
 export const metadata: Metadata = { title: "Charter · The City" };
 
@@ -14,6 +15,10 @@ export default async function CityCharterPage() {
 
   return (
     <div className="space-y-8">
+      <DisclaimerBanner>
+        A community charter written and voted on by members — not a legal document, and it
+        carries no authority beyond this network today.
+      </DisclaimerBanner>
       {charter ? (
         <Card>
           <CardContent className="space-y-2">
