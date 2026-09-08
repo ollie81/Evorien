@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Compass, Hammer } from "lucide-react";
 import { searchPeople, searchProjects } from "@/lib/data/discover";
 import { connectionState, getMyConnectionsByOtherId } from "@/lib/data/connections";
+import { getLiveActivity } from "@/lib/data/presence";
 import { requireUserId } from "@/lib/auth";
 import { profileDisplayName } from "@/lib/types";
 import { roleLabel } from "@/lib/constants/roles";
@@ -13,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PillarBadge } from "@/components/shared/pillar-badge";
 import { EmptyState } from "@/components/shared/empty-state";
+import { LiveActivity } from "@/components/shared/live-activity";
 
 export const metadata: Metadata = { title: "Discover" };
 
@@ -25,10 +27,14 @@ export default async function DiscoverPage({
   const tab = params.tab === "projects" ? "projects" : "people";
   const q = typeof params.q === "string" ? params.q : undefined;
   const pillar = typeof params.pillar === "string" ? params.pillar : undefined;
+  const live = await getLiveActivity();
 
   return (
     <div className="space-y-6">
-      <h1 className="font-heading text-2xl font-semibold tracking-tight">Discover</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="font-heading text-2xl font-semibold tracking-tight">Discover</h1>
+        <LiveActivity initial={live} compact />
+      </div>
 
       <Suspense>
         <DiscoverControls activeTab={tab} />

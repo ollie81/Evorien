@@ -7,6 +7,7 @@ import { getNetworkStats, getRecentOpportunities, getRecentProjects } from "@/li
 import { getFeedPosts } from "@/lib/data/community";
 import { getMyContributions, getMyProjects } from "@/lib/data/projects";
 import { getMyConnectionsByOtherId } from "@/lib/data/connections";
+import { getLiveActivity } from "@/lib/data/presence";
 import { profileDisplayName } from "@/lib/types";
 import { opportunityTypeLabel } from "@/lib/constants/roles";
 import { cn } from "@/lib/utils";
@@ -17,12 +18,13 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PillarBadge } from "@/components/shared/pillar-badge";
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/community/post-card";
+import { LiveActivity } from "@/components/shared/live-activity";
 
 export const metadata: Metadata = { title: "Home" };
 
 export default async function HomePage() {
   const userId = await requireUserId();
-  const [profile, stats, projects, opportunities, posts, skills, myProjects, myContributions, connections] =
+  const [profile, stats, projects, opportunities, posts, skills, myProjects, myContributions, connections, live] =
     await Promise.all([
       getMyProfile(),
       getNetworkStats(),
@@ -33,6 +35,7 @@ export default async function HomePage() {
       getMyProjects(userId),
       getMyContributions(userId),
       getMyConnectionsByOtherId(userId),
+      getLiveActivity(),
     ]);
 
   const steps = [
@@ -74,6 +77,8 @@ export default async function HomePage() {
           Welcome{profile ? `, ${profileDisplayName(profile)}` : ""}
         </h1>
       </div>
+
+      <LiveActivity initial={live} />
 
       <section className="space-y-3">
         <SectionHeader
