@@ -95,3 +95,34 @@ export async function getEvidenceSignedUrl(path: string): Promise<string | null>
     .createSignedUrl(path, 60 * 5);
   return data?.signedUrl ?? null;
 }
+
+export interface AdminProfileSkill {
+  id: string;
+  profile_id: string;
+  is_verified: boolean;
+  created_at: string;
+  skill: { name: string } | null;
+  profile: { full_name: string | null; username: string | null; passport_id: string } | null;
+}
+
+export async function getAllProfileSkills(): Promise<AdminProfileSkill[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profile_skills")
+    .select(
+      "id, profile_id, is_verified, created_at, skill:skills(name), profile:profiles!profile_skills_profile_id_fkey(full_name, username, passport_id)"
+    )
+    .order("is_verified", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  return (data ?? []) as unknown as AdminProfileSkill[];
+}
+
+export async function getUnverifiedSkillCount(): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("profile_skills")
+    .select("*", { count: "exact", head: true })
+    .eq("is_verified", false);
+  return count ?? 0;
+}

@@ -6,6 +6,7 @@ import { TabLink } from "@/components/build/tab-link";
 const TABS = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/verifications", label: "Verification" },
+  { href: "/admin/skills", label: "Skills" },
   { href: "/admin/reports", label: "Reports" },
   { href: "/admin/cities", label: "Cities" },
   { href: "/admin/charter", label: "Charter" },

@@ -203,13 +203,17 @@ team — in-app notifications (bell in the nav + a full page), triggered by
 database events rather than polled, covering a new connection request, your
 connection request being accepted, a new application on an opportunity you
 posted, your own application being accepted or rejected, your contribution
-being accepted or declined, and someone joining a project you own — content
+being accepted or declined, a skill on your Passport being verified by an
+admin, and someone joining a project you own — content
 reporting, member-submitted
 verification requests (with private
 evidence upload to Supabase Storage), an admin panel — gated on
 `profiles.is_admin`, both by a layout redirect and independently inside
 every admin Server Action — covering verification review (approve/reject,
-with a time-limited signed URL to view evidence), report moderation,
+with a time-limited signed URL to view evidence), verifying or unverifying
+a specific skill on a member's Passport (distinct from the profile-wide
+verification level — this is what actually shows the ✓ next to a claimed
+skill and pays out its reputation), report moderation,
 adding/updating City locations, publishing Charter versions and reviewing
 member-proposed changes, and opening new governance proposals for voting —
 and reputation, awarded automatically by database triggers (never by likes

@@ -68,3 +68,29 @@ export async function rejectVerificationAction(verificationId: string) {
 
   revalidatePath("/admin/verifications");
 }
+
+export async function verifySkillAction(profileSkillId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profile_skills")
+    .update({ is_verified: true })
+    .eq("id", profileSkillId);
+  if (error) throw new Error("Could not verify this skill.");
+
+  revalidatePath("/admin/skills");
+  revalidatePath("/passport");
+}
+
+export async function unverifySkillAction(profileSkillId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profile_skills")
+    .update({ is_verified: false })
+    .eq("id", profileSkillId);
+  if (error) throw new Error("Could not update this skill.");
+
+  revalidatePath("/admin/skills");
+  revalidatePath("/passport");
+}

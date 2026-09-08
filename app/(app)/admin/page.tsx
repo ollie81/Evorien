@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Flag, ShieldCheck } from "lucide-react";
-import { getOpenReportCount, getPendingVerificationCount } from "@/lib/data/admin";
+import { Award, Flag, ShieldCheck } from "lucide-react";
+import { getOpenReportCount, getPendingVerificationCount, getUnverifiedSkillCount } from "@/lib/data/admin";
 import { getNetworkStats } from "@/lib/data/home";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatTile } from "@/components/shared/stat-tile";
@@ -9,9 +9,10 @@ import { StatTile } from "@/components/shared/stat-tile";
 export const metadata: Metadata = { title: "Admin Overview" };
 
 export default async function AdminOverviewPage() {
-  const [reportCount, verificationCount, stats] = await Promise.all([
+  const [reportCount, verificationCount, unverifiedSkillCount, stats] = await Promise.all([
     getOpenReportCount(),
     getPendingVerificationCount(),
+    getUnverifiedSkillCount(),
     getNetworkStats(),
   ]);
 
@@ -26,7 +27,7 @@ export default async function AdminOverviewPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         <Link href="/admin/verifications">
           <Card className="transition-colors hover:bg-accent/50">
             <CardContent className="flex items-center gap-3">
@@ -34,6 +35,17 @@ export default async function AdminOverviewPage() {
               <div>
                 <p className="text-2xl font-semibold">{verificationCount}</p>
                 <p className="text-sm text-muted-foreground">Pending verification requests</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/admin/skills">
+          <Card className="transition-colors hover:bg-accent/50">
+            <CardContent className="flex items-center gap-3">
+              <Award className="size-8 text-primary" strokeWidth={1.5} />
+              <div>
+                <p className="text-2xl font-semibold">{unverifiedSkillCount}</p>
+                <p className="text-sm text-muted-foreground">Unverified skills</p>
               </div>
             </CardContent>
           </Card>
