@@ -187,7 +187,10 @@ contribution loop (a member logs one against a specific project they're
 active on, the project's owner/admins accept or decline it, status is
 color-coded), the full City section (Vision,
 Charter, Governance voting, Roadmap, Locations), a Community feed (posts,
-comments, likes), in-app notifications (bell in the nav + a full page),
+comments, likes) built around project updates rather than a generic
+feed — post as a general update or tag one of your own active
+projects, and every project's own page has an Updates section for its
+team — in-app notifications (bell in the nav + a full page),
 content reporting, member-submitted verification requests (with private
 evidence upload to Supabase Storage), an admin panel — gated on
 `profiles.is_admin`, both by a layout redirect and independently inside
