@@ -1,7 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const AUTH_PAGES = ["/sign-in", "/sign-up"];
+// Reachable without a session. A signed-out visit to anything else lands on
+// /welcome — the vision pitch — rather than a bare sign-in form with no
+// context; a signed-in visit to any of these bounces to the dashboard.
+const PUBLIC_PAGES = ["/sign-in", "/sign-up", "/welcome"];
 
 /**
  * Optimistic auth check, run on every request by proxy.ts. It only reads
@@ -39,15 +42,15 @@ export async function updateSession(request: NextRequest) {
   const claims = data?.claims ?? null;
 
   const pathname = request.nextUrl.pathname;
-  const isAuthPage = AUTH_PAGES.includes(pathname);
+  const isPublicPage = PUBLIC_PAGES.includes(pathname);
 
-  if (!claims && !isAuthPage) {
+  if (!claims && !isPublicPage) {
     const url = request.nextUrl.clone();
-    url.pathname = "/sign-in";
+    url.pathname = "/welcome";
     return NextResponse.redirect(url);
   }
 
-  if (claims && isAuthPage) {
+  if (claims && isPublicPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
