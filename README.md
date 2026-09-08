@@ -175,7 +175,7 @@ create on its own: creating it happens only when the member clicks a real
 
 ### What Evorien AI can look up (and how it stays scoped)
 
-Nine tools, each a thin, validated wrapper around this app's own data
+Ten tools, each a thin, validated wrapper around this app's own data
 functions — the AI never queries the database directly:
 
 | Tool | What it can see |
@@ -186,6 +186,7 @@ functions — the AI never queries the database directly:
 | `search_opportunities` | Real open opportunities |
 | `get_user_context` | The **calling member's own** Passport, skills, reputation, connections |
 | `get_user_projects` | The **calling member's own** projects and role on each |
+| `match_contributions` | Real active projects with an unfilled skill the **caller** already has — "where can I contribute," not generic search |
 | `get_city_information` | The five pillars + real City locations, with their real status |
 | `get_charter_information` | The actual currently-published Charter, if any |
 | `get_governance_information` | Real governance proposals — described neutrally, never how to vote |
@@ -341,17 +342,20 @@ provisioned, so every Server Action and RLS policy is still verified by
 hand against the real schema rather than by an automated suite.
 
 **Evorien AI:** an ongoing, staged build (see section 7 above) — a real
-"Ask Evorien AI" chat (linked from Home, at `/ai`) grounded in nine
+"Ask Evorien AI" chat (linked from Home, at `/ai`) grounded in ten
 server-side tools that query this app's actual projects, members, skills,
 opportunities, the caller's own Passport, City/pillar info, the Charter,
 and governance proposals — never a static prompt pretending to know
-Evorien. It can turn a conversation into a structured project draft, which
-only gets created when the member clicks a real confirm button; the model
-itself has no path to writing to the database. Backed by a fixed
-non-human identity/persona, per-member daily rate limiting, and a real
-usage ledger (`ai_usage`, `ai_conversations`, `ai_messages`). Not yet
-built: member/opportunity matching beyond direct search, and contextual
-"Ask Evorien AI" entry points on Build/Discover/Passport/City beyond Home.
+Evorien. Beyond direct search, `match_contributions` proactively connects
+a member's own skills to real projects that still need them — "where can
+I contribute" answered from real project_skills/profile_skills data, not
+a search the member has to think to run. It can turn a conversation into a
+structured project draft, which only gets created when the member clicks
+a real confirm button; the model itself has no path to writing to the
+database. Backed by a fixed non-human identity/persona, per-member daily
+rate limiting, and a real usage ledger (`ai_usage`, `ai_conversations`,
+`ai_messages`). Not yet built: contextual "Ask Evorien AI" entry points on
+Build/Discover/Passport/City beyond Home, and streaming responses.
 
 **Not built yet, by design:**
 - Analytics dashboard beyond the admin overview's live counters.

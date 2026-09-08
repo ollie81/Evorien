@@ -5,7 +5,7 @@ import { tool } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import { searchPeople, searchProjects } from "@/lib/data/discover";
 import { getMyProjects, getOpenOpportunities } from "@/lib/data/projects";
-import { getMySkills, getReputationScore } from "@/lib/data/profile";
+import { getMySkillIds, getMySkills, getReputationScore } from "@/lib/data/profile";
 import { getMyConnectionsByOtherId } from "@/lib/data/connections";
 import { getCities, getCurrentCharter, getGovernanceProposals } from "@/lib/data/city";
 import { profileDisplayName } from "@/lib/types";
@@ -177,6 +177,47 @@ export function buildEvorienAiTools(userId: string) {
             status: p.status,
           })),
         };
+      },
+    }),
+
+    match_contributions: tool({
+      description:
+        "Find real, active projects with an unfilled needed skill that matches a skill already on the CURRENT member's own Passport — Evorien's core 'what should I contribute' / 'where can I help' recommendation. Excludes projects the member is already on. Never invents a match; if the member has no skills listed yet, say so and suggest adding some.",
+      inputSchema: z.object({}),
+      execute: async () => {
+        const supabase = await createClient();
+        const [skillIds, myProjects] = await Promise.all([getMySkillIds(userId), getMyProjects(userId)]);
+        if (skillIds.length === 0) {
+          return { found: 0, matches: [], note: "This member hasn't added any skills to their Passport yet." };
+        }
+
+        const myProjectIds = new Set(myProjects.map((p) => p.id));
+        const { data } = await supabase
+          .from("project_skills")
+          .select("skill:skills(name), project:projects(id, name, tagline, status)")
+          .in("skill_id", skillIds)
+          .eq("is_filled", false);
+
+        const seen = new Set<string>();
+        const matches: { projectId: string; projectName: string; tagline: string | null; matchedSkill: string }[] =
+          [];
+        for (const row of (data ?? []) as unknown as {
+          skill: { name: string } | null;
+          project: { id: string; name: string; tagline: string | null; status: string } | null;
+        }[]) {
+          const project = row.project;
+          if (!project || project.status !== "ACTIVE") continue;
+          if (myProjectIds.has(project.id) || seen.has(project.id)) continue;
+          seen.add(project.id);
+          matches.push({
+            projectId: project.id,
+            projectName: project.name,
+            tagline: project.tagline,
+            matchedSkill: row.skill?.name ?? "",
+          });
+        }
+
+        return { found: matches.length, matches: matches.slice(0, 8) };
       },
     }),
 
