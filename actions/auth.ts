@@ -24,7 +24,9 @@ export async function signInAction(
     return {
       error: error.message.includes("Invalid login credentials")
         ? "Incorrect email or password."
-        : "Sign in failed. Please try again.",
+        : error.message.includes("Email not confirmed")
+          ? "Please confirm your email first — check your inbox for the confirmation link."
+          : "Sign in failed. Please try again.",
     };
   }
 
