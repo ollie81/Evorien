@@ -3,9 +3,12 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Compass, Hammer } from "lucide-react";
 import { searchPeople, searchProjects } from "@/lib/data/discover";
+import { connectionState, getMyConnectionsByOtherId } from "@/lib/data/connections";
+import { requireUserId } from "@/lib/auth";
 import { profileDisplayName } from "@/lib/types";
 import { roleLabel } from "@/lib/constants/roles";
 import { DiscoverControls } from "@/components/discover/discover-controls";
+import { ConnectButton } from "@/components/discover/connect-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PillarBadge } from "@/components/shared/pillar-badge";
@@ -41,7 +44,11 @@ export default async function DiscoverPage({
 }
 
 async function PeopleResults({ q, pillar }: { q?: string; pillar?: string }) {
-  const people = await searchPeople({ q, pillar });
+  const viewerId = await requireUserId();
+  const [people, connections] = await Promise.all([
+    searchPeople({ q, pillar }),
+    getMyConnectionsByOtherId(viewerId),
+  ]);
 
   if (people.length === 0) {
     return (
@@ -60,7 +67,15 @@ async function PeopleResults({ q, pillar }: { q?: string; pillar?: string }) {
                 <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1 space-y-1.5">
-                <p className="truncate font-medium">{name}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="truncate font-medium">{name}</p>
+                  {person.id !== viewerId && (
+                    <ConnectButton
+                      profileId={person.id}
+                      initialState={connectionState(viewerId, connections.get(person.id))}
+                    />
+                  )}
+                </div>
                 {person.roles.length > 0 && (
                   <p className="truncate text-sm text-muted-foreground">
                     {person.roles.map(roleLabel).join(" · ")}

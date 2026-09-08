@@ -26,6 +26,14 @@ export function profileDisplayName(profile: Pick<Profile, "full_name" | "usernam
   return profile.passport_id;
 }
 
+export interface Connection {
+  id: string;
+  requester_id: string;
+  addressee_id: string;
+  status: string;
+  created_at: string;
+}
+
 export interface ProfileSkill {
   proficiency: string | null;
   is_verified: boolean;

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Award, Pencil } from "lucide-react";
+import { Award, Pencil, Users } from "lucide-react";
 import { getAchievements, getMyProfile, getMySkills, getReputationScore } from "@/lib/data/profile";
+import { getAcceptedConnections, getPendingConnectionRequests } from "@/lib/data/connections";
 import { profileDisplayName } from "@/lib/types";
 import { roleLabel, reputationLevelLabel, verificationLevelLabel } from "@/lib/constants/roles";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,10 +22,12 @@ export default async function PassportPage() {
   const profile = await getMyProfile();
   if (!profile) redirect("/sign-in");
 
-  const [reputationScore, skills, achievements] = await Promise.all([
+  const [reputationScore, skills, achievements, connections, pendingRequests] = await Promise.all([
     getReputationScore(profile.id),
     getMySkills(profile.id),
     getAchievements(profile.id),
+    getAcceptedConnections(profile.id),
+    getPendingConnectionRequests(profile.id),
   ]);
 
   const displayName = profileDisplayName(profile);
@@ -90,6 +93,40 @@ export default async function PassportPage() {
       <div>
         <RequestVerificationDialog userId={profile.id} />
       </div>
+
+      <section className="space-y-3">
+        <SectionHeader
+          title="Connections"
+          action={
+            <Button
+              variant="ghost"
+              size="sm"
+              render={
+                <Link href="/passport/connections">
+                  View all{pendingRequests.length > 0 ? ` (${pendingRequests.length} pending)` : ""}
+                </Link>
+              }
+            />
+          }
+        />
+        {connections.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="No connections yet"
+            message="Connect with people you find in Discover."
+            actionLabel="Open Discover"
+            actionHref="/discover"
+          />
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {connections.slice(0, 8).map((c) => (
+              <Badge key={c.id} variant="secondary">
+                {profileDisplayName(c.profile)}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </section>
 
       {profile.roles.length > 0 && (
         <section className="space-y-3">
