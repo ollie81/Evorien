@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Compass, Hammer, MessageSquare, Sparkles } from "lucide-react";
-import { getMyProfile } from "@/lib/data/profile";
+import { Circle, CircleCheck, Hammer, MessageSquare, Sparkles } from "lucide-react";
+import { requireUserId } from "@/lib/auth";
+import { getMyProfile, getMySkills } from "@/lib/data/profile";
 import { getNetworkStats, getRecentOpportunities, getRecentProjects } from "@/lib/data/home";
 import { getFeedPosts } from "@/lib/data/community";
-import { getUserId } from "@/lib/auth";
+import { getMyContributions, getMyProjects } from "@/lib/data/projects";
+import { getMyConnectionsByOtherId } from "@/lib/data/connections";
 import { profileDisplayName } from "@/lib/types";
 import { opportunityTypeLabel } from "@/lib/constants/roles";
+import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionHeader } from "@/components/shared/section-header";
 import { StatTile } from "@/components/shared/stat-tile";
@@ -18,14 +21,51 @@ import { PostCard } from "@/components/community/post-card";
 export const metadata: Metadata = { title: "Home" };
 
 export default async function HomePage() {
-  const userId = await getUserId();
-  const [profile, stats, projects, opportunities, posts] = await Promise.all([
-    getMyProfile(),
-    getNetworkStats(),
-    getRecentProjects(),
-    getRecentOpportunities(),
-    getFeedPosts(userId, 3),
-  ]);
+  const userId = await requireUserId();
+  const [profile, stats, projects, opportunities, posts, skills, myProjects, myContributions, connections] =
+    await Promise.all([
+      getMyProfile(),
+      getNetworkStats(),
+      getRecentProjects(),
+      getRecentOpportunities(),
+      getFeedPosts(userId, 3),
+      getMySkills(userId),
+      getMyProjects(userId),
+      getMyContributions(userId),
+      getMyConnectionsByOtherId(userId),
+    ]);
+
+  const steps = [
+    {
+      key: "contribute-what",
+      done: skills.length > 0 || Boolean(profile?.contribution_summary),
+      label: "Declare a skill or what you can contribute",
+      href: "/passport/edit",
+      cta: "Edit Passport",
+    },
+    {
+      key: "connect",
+      done: connections.size > 0,
+      label: "Find one person in Discover and connect",
+      href: "/discover",
+      cta: "Open Discover",
+    },
+    {
+      key: "project",
+      done: myProjects.length > 0,
+      label: "Join or create a project",
+      href: "/build",
+      cta: "Open Build",
+    },
+    {
+      key: "contribute",
+      done: myContributions.length > 0,
+      label: "Log a contribution",
+      href: "/build?tab=contributions",
+      cta: "Log one",
+    },
+  ];
+  const allStepsDone = steps.every((step) => step.done);
 
   return (
     <div className="space-y-10">
@@ -49,6 +89,44 @@ export default async function HomePage() {
           </CardContent>
         </Card>
       </section>
+
+      {!allStepsDone && (
+        <section className="space-y-3">
+          <SectionHeader
+            title="Get started"
+            subtitle="Four steps from joining to being an active contributor."
+          />
+          <Card>
+            <CardContent className="divide-y divide-border p-0">
+              {steps.map((step) => (
+                <div
+                  key={step.key}
+                  className="flex items-center justify-between gap-4 px-4 py-3 first:pt-4 last:pb-4"
+                >
+                  <div className="flex items-center gap-3">
+                    {step.done ? (
+                      <CircleCheck className="size-5 shrink-0 text-primary" />
+                    ) : (
+                      <Circle className="size-5 shrink-0 text-muted-foreground/40" />
+                    )}
+                    <span className={cn("text-sm", step.done && "text-muted-foreground line-through")}>
+                      {step.label}
+                    </span>
+                  </div>
+                  {!step.done && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                      render={<Link href={step.href}>{step.cta}</Link>}
+                    />
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </section>
+      )}
 
       <section className="space-y-3">
         <SectionHeader
@@ -133,17 +211,6 @@ export default async function HomePage() {
             ))}
           </div>
         )}
-      </section>
-
-      <section className="space-y-3">
-        <SectionHeader title="Discover" />
-        <EmptyState
-          icon={Compass}
-          title="Find people and projects to collaborate with"
-          message="Search by skill, role, pillar, or country."
-          actionLabel="Open Discover"
-          actionHref="/discover"
-        />
       </section>
     </div>
   );
