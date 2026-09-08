@@ -178,9 +178,14 @@ the browser — only the public anon key, loaded via `NEXT_PUBLIC_` env vars.
 
 **Built:** project scaffold, full database schema with Row Level Security
 on every table, authentication, the full navigation (desktop top nav,
-mobile bottom tabs + top bar), onboarding into a real Passport, a live
-(never fabricated) Home dashboard, Discover search, project creation and
-joining, opportunities and contributions, the full City section (Vision,
+mobile bottom tabs + top bar), onboarding into a real Passport, a Home
+dashboard that's a guided first-session checklist until a member has
+declared a skill, connected with someone, joined a project and logged a
+contribution — then becomes a live (never fabricated) dashboard — Discover
+search, project creation and joining, opportunities and a full
+contribution loop (a member logs one against a specific project they're
+active on, the project's owner/admins accept or decline it, status is
+color-coded), the full City section (Vision,
 Charter, Governance voting, Roadmap, Locations), a Community feed (posts,
 comments, likes), in-app notifications (bell in the nav + a full page),
 content reporting, member-submitted verification requests (with private
