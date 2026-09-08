@@ -49,3 +49,4 @@ next-env.d.ts
 !.vscode/extensions.json
 *.iml
 .DS_Store
+.env*
