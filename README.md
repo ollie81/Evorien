@@ -193,15 +193,13 @@ member-proposed changes, and opening new governance proposals for voting —
 and reputation, awarded automatically by database triggers (never by likes
 or engagement) for having a contribution accepted, joining or completing a
 project, getting a skill verified, casting a vote, creating a proposal, or
-organizing an event that runs to completion.
+organizing an event that runs to completion. Also built: member-to-member
+connections (a Connect button in Discover, request/accept/decline, and a
+network view on the Passport), and a public `/welcome` vision page that
+signed-out visitors land on instead of a bare sign-in form.
 
 **Not built yet, by design:**
 - Automated tests — not yet set up for this Next.js codebase.
-- Connections (member-to-member) have a full schema, RLS, and a
-  notification trigger, but no Server Action or UI yet — there's no way to
-  actually send or accept a connection request today.
-- No public, signed-out landing page communicating the vision — every route
-  except sign-in/sign-up requires an account first.
 - Analytics dashboard beyond the admin overview's live counters.
 - Payments / premium subscriptions (Phase G) — deliberately not built into
   V1 per the product principles: no fundraising, no token, no investment
