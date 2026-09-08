@@ -137,7 +137,55 @@ you, but you no longer need to write SQL to add it either.
 
 ---
 
-## 7. Project structure
+## 7. Add Evorien AI (optional, Stage 2 of an ongoing build)
+
+Evorien AI is an intelligence layer being added on top of everything above —
+it will eventually help members find people, projects and opportunities
+that match them, understand the Charter and governance, and turn an idea
+into a real project. It reuses this app's existing data and login system;
+it is not a separate app.
+
+**Where this stands right now:** the secure server-side wiring is built and
+tested — a member can talk to Evorien AI programmatically — but there is
+**no chat screen in the app yet**. That's the next stage. This section is
+just how to switch the backend on.
+
+1. Get an OpenAI API key, if you don't already have one: go to
+   <https://platform.openai.com>, sign in (or create an account), open
+   **API keys**, and create a new key. You'll also need billing set up on
+   that OpenAI account — Evorien AI calls cost a small amount per message.
+2. In Vercel, open your project -> **Settings -> Environment Variables**
+   and add:
+   - `OPENAI_API_KEY` — the key from step 1. Never put this in a
+     `NEXT_PUBLIC_` variable, never paste it into any file in this repo,
+     and never share it outside Vercel's environment variable screen.
+   - `AI_MODEL` — optional. Leave it unset to use the low-cost default
+     (`gpt-5.6-luna`). Set it to a different OpenAI model name later if you
+     want a more capable (and more expensive) model, with no code changes.
+   - `AI_DAILY_MESSAGE_LIMIT` — optional. Leave unset for the default of
+     30 Evorien AI messages per member per day. Every founding member gets
+     this same limit — it exists to keep the OpenAI bill predictable while
+     the feature is new, not to single anyone out.
+3. Redeploy (Vercel does this automatically on your next push, or click
+   **Redeploy** on the latest deployment).
+
+That's it for Stage 2 — there's nothing to click in the app itself yet.
+The next stage adds the actual "Ask Evorien AI" screen members will use.
+
+### What Evorien AI never does
+
+- It never fabricates members, projects, funding, partnerships, cities, or
+  statistics — if it doesn't have real information, it says so.
+- It never speaks for Evorien's governance or tells anyone how to vote.
+- It never sees your OpenAI key, Supabase's admin credentials, private
+  verification evidence, or another member's private data — only what a
+  Route Handler explicitly, deliberately hands it for one request.
+- Every AI request is checked against your own sign-in (no anonymous use)
+  and against the daily limit above before it ever reaches OpenAI.
+
+---
+
+## 8. Project structure
 
 ```
 app/
@@ -149,6 +197,11 @@ app/
   sign-in/ sign-up/ Auth pages
   onboarding/       First-run flow that creates a Passport
   auth/callback/    Handles Supabase email confirmation links
+  api/ai/           Evorien AI's Route Handlers — the app's only API routes.
+                    Everything else is Server Actions; this exists because a
+                    browser fetch() to an AI endpoint needs a plain HTTP
+                    response, not a Server Action. Checks auth itself on
+                    every request (see lib/ai/ below for why that matters).
 actions/            Server Actions — all database writes go through here.
                     Every admin action independently re-checks requireAdmin()
                     rather than trusting that only admin UI calls it.
@@ -158,13 +211,19 @@ lib/
   auth.ts           getUserId() / requireUserId() / requireAdmin() — the
                     source of truth for "who is this, and can they do that?"
   constants/        Pillars, roles, contribution types, etc.
+  ai/               Evorien AI: model.ts (OpenAI wrapper, reads
+                    OPENAI_API_KEY/AI_MODEL), identity.ts (persona + hard
+                    rules), rate-limit.ts (daily per-member cap, backed by
+                    ai_usage)
 components/
   ui/               shadcn/ui primitives (generated — safe to customize further)
   nav/ shared/ auth/ onboarding/ passport/ build/ city/ discover/
   community/ notifications/ admin/
                     Feature UI, organized to match the app/ structure
 proxy.ts            Next.js 16's replacement for middleware.ts — refreshes
-                    the auth session and redirects signed-out visitors
+                    the auth session and redirects signed-out visitors.
+                    Skips app/api/** entirely: those routes return their own
+                    JSON auth errors instead of being redirected like a page.
 supabase/
   migrations/       The entire database schema, in run order
 ```
@@ -174,7 +233,7 @@ the browser — only the public anon key, loaded via `NEXT_PUBLIC_` env vars.
 
 ---
 
-## 8. What's built vs. what's next
+## 9. What's built vs. what's next
 
 **Built:** project scaffold, full database schema with Row Level Security
 on every table, authentication, the full navigation (desktop top nav,
@@ -244,6 +303,15 @@ test project (never the founding members' live database) which hasn't been
 provisioned, so every Server Action and RLS policy is still verified by
 hand against the real schema rather than by an automated suite.
 
+**Evorien AI:** Stage 2 of an ongoing, staged build (see section 7 above) —
+secure server-side integration with OpenAI, a fixed non-human identity/
+persona with hard rules against fabricating members, projects, funding or
+governance outcomes, and per-member daily rate limiting backed by a real
+usage ledger (`ai_usage`, plus `ai_conversations`/`ai_messages` for the
+chat history the next stage will actually populate). No chat interface
+exists in the app yet — that, along with connecting real Evorien context
+(profile, skills, projects) to what the AI can see, is the next stage.
+
 **Not built yet, by design:**
 - Analytics dashboard beyond the admin overview's live counters.
 - Payments / premium subscriptions (Phase G) — deliberately not built into
@@ -252,7 +320,7 @@ hand against the real schema rather than by an automated suite.
 
 ---
 
-## 9. Everyday commands
+## 10. Everyday commands
 
 ```bash
 npm run dev     # local development server, http://localhost:3000

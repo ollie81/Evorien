@@ -42,6 +42,15 @@ export async function updateSession(request: NextRequest) {
   const claims = data?.claims ?? null;
 
   const pathname = request.nextUrl.pathname;
+
+  // API routes (app/api/**/route.ts) return their own JSON error responses
+  // for signed-out/unauthorized requests — see e.g. app/api/ai/chat/route.ts.
+  // Redirecting them to a page here, before they even run, would turn a
+  // fetch() call expecting JSON into an HTML redirect response instead.
+  if (pathname.startsWith("/api/")) {
+    return supabaseResponse;
+  }
+
   const isPublicPage = PUBLIC_PAGES.includes(pathname);
 
   if (!claims && !isPublicPage) {
