@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { updateProfileAction, addSkillAction, type UpdateProfileFormState } from "@/actions/profile";
+import { useActionState, useState, useTransition } from "react";
+import { X } from "lucide-react";
+import { updateProfileAction, addSkillAction, removeSkillAction, type UpdateProfileFormState } from "@/actions/profile";
 import { PILLARS } from "@/lib/constants/pillars";
 import { ROLES, roleLabel } from "@/lib/constants/roles";
 import type { Profile, ProfileSkill } from "@/lib/types";
@@ -17,6 +18,7 @@ const initialState: UpdateProfileFormState = undefined;
 export function EditProfileForm({ profile, skills }: { profile: Profile; skills: ProfileSkill[] }) {
   const [state, formAction, pending] = useActionState(updateProfileAction, initialState);
   const [skillState, addSkillFormAction, addingSkill] = useActionState(addSkillAction, undefined);
+  const [, startRemoveSkillTransition] = useTransition();
   const [selectedPillars, setSelectedPillars] = useState<Set<string>>(new Set(profile.pillars));
   const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set(profile.roles));
 
@@ -136,10 +138,22 @@ export function EditProfileForm({ profile, skills }: { profile: Profile; skills:
       <div className="space-y-3 border-t border-border pt-6">
         <Label>Skills</Label>
         <div className="flex flex-wrap gap-2">
-          {skills.map((skill, i) => (
-            <Badge key={i} variant="outline">
-              {skill.skills?.name}
-            </Badge>
+          {skills.map((skill) => (
+            <span key={skill.id} className="inline-flex items-center gap-1">
+              <Badge variant="outline">{skill.skills?.name}</Badge>
+              <button
+                type="button"
+                aria-label={`Remove ${skill.skills?.name ?? "skill"}`}
+                className="text-muted-foreground hover:text-destructive"
+                onClick={() =>
+                  startRemoveSkillTransition(async () => {
+                    await removeSkillAction(skill.id);
+                  })
+                }
+              >
+                <X className="size-3.5" />
+              </button>
+            </span>
           ))}
         </div>
         <form action={addSkillFormAction} className="flex gap-2">

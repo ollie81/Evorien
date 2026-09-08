@@ -5,7 +5,8 @@ import { Compass, Hammer } from "lucide-react";
 import { searchPeople, searchProjects } from "@/lib/data/discover";
 import { connectionState, getMyConnectionsByOtherId } from "@/lib/data/connections";
 import { getLiveActivity } from "@/lib/data/presence";
-import { requireUserId } from "@/lib/auth";
+import { getMySkillIds } from "@/lib/data/profile";
+import { getUserId, requireUserId } from "@/lib/auth";
 import { profileDisplayName } from "@/lib/types";
 import { roleLabel } from "@/lib/constants/roles";
 import { DiscoverControls } from "@/components/discover/discover-controls";
@@ -27,6 +28,7 @@ export default async function DiscoverPage({
   const tab = params.tab === "projects" ? "projects" : "people";
   const q = typeof params.q === "string" ? params.q : undefined;
   const pillar = typeof params.pillar === "string" ? params.pillar : undefined;
+  const mySkillsOnly = params.mySkills === "1";
   const live = await getLiveActivity();
 
   return (
@@ -43,7 +45,7 @@ export default async function DiscoverPage({
       {tab === "people" ? (
         <PeopleResults q={q} pillar={pillar} />
       ) : (
-        <ProjectResults q={q} pillar={pillar} />
+        <ProjectResults q={q} pillar={pillar} mySkillsOnly={mySkillsOnly} />
       )}
     </div>
   );
@@ -108,12 +110,30 @@ async function PeopleResults({ q, pillar }: { q?: string; pillar?: string }) {
   );
 }
 
-async function ProjectResults({ q, pillar }: { q?: string; pillar?: string }) {
-  const projects = await searchProjects({ q, pillar });
+async function ProjectResults({
+  q,
+  pillar,
+  mySkillsOnly,
+}: {
+  q?: string;
+  pillar?: string;
+  mySkillsOnly: boolean;
+}) {
+  const viewerId = await getUserId();
+  const skillIds = mySkillsOnly && viewerId ? await getMySkillIds(viewerId) : undefined;
+  const projects = await searchProjects({ q, pillar, skillIds });
 
   if (projects.length === 0) {
     return (
-      <EmptyState icon={Hammer} title="No projects found" message="Try a different search or pillar filter." />
+      <EmptyState
+        icon={Hammer}
+        title="No projects found"
+        message={
+          mySkillsOnly
+            ? "No open projects currently need a skill on your Passport. Try clearing the filter, or add more skills from Passport → Edit."
+            : "Try a different search or pillar filter."
+        }
+      />
     );
   }
 

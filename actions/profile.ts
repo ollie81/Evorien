@@ -97,3 +97,19 @@ export async function addSkillAction(
   revalidatePath("/passport");
   return undefined;
 }
+
+export async function removeSkillAction(profileSkillId: string) {
+  const userId = await requireUserId();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("profile_skills")
+    .delete()
+    .eq("id", profileSkillId)
+    .eq("profile_id", userId);
+
+  if (error) throw new Error("Could not remove this skill.");
+
+  revalidatePath("/passport/edit");
+  revalidatePath("/passport");
+}

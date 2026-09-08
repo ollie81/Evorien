@@ -14,6 +14,7 @@ export function DiscoverControls({ activeTab }: { activeTab: "people" | "project
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const currentPillar = searchParams.get("pillar");
+  const mySkillsOnly = searchParams.get("mySkills") === "1";
 
   function updateParams(patch: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -65,6 +66,14 @@ export function DiscoverControls({ activeTab }: { activeTab: "people" | "project
           </Chip>
         ))}
       </div>
+
+      {activeTab === "projects" && (
+        <div className="flex flex-wrap gap-2">
+          <Chip selected={mySkillsOnly} onClick={() => updateParams({ mySkills: mySkillsOnly ? null : "1" })}>
+            Needs a skill I have
+          </Chip>
+        </div>
+      )}
     </div>
   );
 }

@@ -35,6 +35,7 @@ export interface Connection {
 }
 
 export interface ProfileSkill {
+  id: string;
   proficiency: string | null;
   is_verified: boolean;
   skills: { name: string } | null;

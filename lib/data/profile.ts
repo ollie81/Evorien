@@ -29,9 +29,16 @@ export async function getMySkills(profileId: string): Promise<ProfileSkill[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("profile_skills")
-    .select("proficiency, is_verified, skills(name)")
+    .select("id, proficiency, is_verified, skills(name)")
     .eq("profile_id", profileId);
   return (data ?? []) as unknown as ProfileSkill[];
+}
+
+/** Just the skill ids a member has claimed — for matching against project_skills elsewhere (e.g. Discover). */
+export async function getMySkillIds(profileId: string): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("profile_skills").select("skill_id").eq("profile_id", profileId);
+  return (data ?? []).map((row) => row.skill_id as string);
 }
 
 export async function getAchievements(profileId: string): Promise<Achievement[]> {

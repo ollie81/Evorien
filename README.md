@@ -182,7 +182,8 @@ mobile bottom tabs + top bar), onboarding into a real Passport, a Home
 dashboard that's a guided first-session checklist until a member has
 declared a skill, connected with someone, joined a project and logged a
 contribution — then becomes a live (never fabricated) dashboard — Discover
-search, and a complete Build ecosystem: project creation, a public project
+search, with an optional filter that matches Projects to a skill already on
+your own Passport, and a complete Build ecosystem: project creation, a public project
 page with team members, editing a project's own details and progress
 (stage and status — marking a project "Completed" is what triggers
 completion reputation for every active team member, not just the owner),
