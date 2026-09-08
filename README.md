@@ -199,8 +199,12 @@ Charter, Governance voting, Roadmap, Locations), a Community feed (posts,
 comments, likes) built around project updates rather than a generic
 feed — post as a general update or tag one of your own active
 projects, and every project's own page has an Updates section for its
-team — in-app notifications (bell in the nav + a full page),
-content reporting, member-submitted verification requests (with private
+team — in-app notifications (bell in the nav + a full page), triggered by
+database events rather than polled, covering a new connection request, a
+new application on an opportunity you posted, your own application being
+accepted or rejected, your contribution being accepted or declined, and
+someone joining a project you own — content reporting, member-submitted
+verification requests (with private
 evidence upload to Supabase Storage), an admin panel — gated on
 `profiles.is_admin`, both by a layout redirect and independently inside
 every admin Server Action — covering verification review (approve/reject,

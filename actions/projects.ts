@@ -316,6 +316,16 @@ export async function applyToOpportunityAction(opportunityId: string, message: s
   const userId = await requireUserId();
   const supabase = await createClient();
 
+  const { data: opportunity } = await supabase
+    .from("opportunities")
+    .select("posted_by")
+    .eq("id", opportunityId)
+    .maybeSingle();
+
+  if (opportunity?.posted_by === userId) {
+    return { error: "You can't apply to your own opportunity." };
+  }
+
   const { data, error } = await supabase
     .from("applications")
     .insert({ opportunity_id: opportunityId, applicant_id: userId, message: message || null })
