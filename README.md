@@ -184,19 +184,24 @@ joining, opportunities and contributions, the full City section (Vision,
 Charter, Governance voting, Roadmap, Locations), a Community feed (posts,
 comments, likes), in-app notifications (bell in the nav + a full page),
 content reporting, member-submitted verification requests (with private
-evidence upload to Supabase Storage), and an admin panel — gated on
+evidence upload to Supabase Storage), an admin panel — gated on
 `profiles.is_admin`, both by a layout redirect and independently inside
 every admin Server Action — covering verification review (approve/reject,
 with a time-limited signed URL to view evidence), report moderation,
 adding/updating City locations, publishing Charter versions and reviewing
-member-proposed changes, and opening new governance proposals for voting.
+member-proposed changes, and opening new governance proposals for voting —
+and reputation, awarded automatically by database triggers (never by likes
+or engagement) for having a contribution accepted, joining or completing a
+project, getting a skill verified, casting a vote, creating a proposal, or
+organizing an event that runs to completion.
 
 **Not built yet, by design:**
 - Automated tests — not yet set up for this Next.js codebase.
-- Reputation events aren't awarded automatically yet (e.g. accepting a
-  contribution or completing a project doesn't yet insert a
-  `reputation_events` row) — the ledger and the public score view exist,
-  the triggering actions don't.
+- Connections (member-to-member) have a full schema, RLS, and a
+  notification trigger, but no Server Action or UI yet — there's no way to
+  actually send or accept a connection request today.
+- No public, signed-out landing page communicating the vision — every route
+  except sign-in/sign-up requires an account first.
 - Analytics dashboard beyond the admin overview's live counters.
 - Payments / premium subscriptions (Phase G) — deliberately not built into
   V1 per the product principles: no fundraising, no token, no investment
