@@ -21,3 +21,22 @@ export function formatDistanceToNow(isoDate: string): string {
   }
   return "just now";
 }
+
+const eventDateTimeFormatter = new Intl.DateTimeFormat("en", {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+const eventTimeFormatter = new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" });
+
+/** "Sep 12, 6:00 PM", or with an end time "Sep 12, 6:00 PM – 8:00 PM" (just the time if same day). */
+export function formatEventTime(startsAt: string, endsAt: string | null): string {
+  const start = new Date(startsAt);
+  const startLabel = eventDateTimeFormatter.format(start);
+  if (!endsAt) return startLabel;
+
+  const end = new Date(endsAt);
+  const sameDay = start.toDateString() === end.toDateString();
+  return `${startLabel} – ${sameDay ? eventTimeFormatter.format(end) : eventDateTimeFormatter.format(end)}`;
+}
