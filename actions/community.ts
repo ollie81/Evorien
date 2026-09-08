@@ -13,6 +13,8 @@ export async function createPostAction(
   const userId = await requireUserId();
   const content = String(formData.get("content") ?? "").trim();
   const pillarCode = String(formData.get("pillarCode") ?? "").trim();
+  const rawProjectId = String(formData.get("projectId") ?? "").trim();
+  const projectId = rawProjectId === "none" ? "" : rawProjectId;
 
   if (!content) {
     return { error: "Write something before posting." };
@@ -22,10 +24,26 @@ export async function createPostAction(
   }
 
   const supabase = await createClient();
+
+  if (projectId) {
+    const { data: membership } = await supabase
+      .from("project_members")
+      .select("project_id")
+      .eq("project_id", projectId)
+      .eq("profile_id", userId)
+      .eq("status", "ACTIVE")
+      .maybeSingle();
+
+    if (!membership) {
+      return { error: "You're not an active member of that project." };
+    }
+  }
+
   const { error } = await supabase.from("posts").insert({
     author_id: userId,
     content,
     pillar_code: pillarCode || null,
+    project_id: projectId || null,
   });
 
   if (error) {
@@ -34,6 +52,7 @@ export async function createPostAction(
 
   revalidatePath("/community");
   revalidatePath("/");
+  if (projectId) revalidatePath(`/build/${projectId}`);
   return undefined;
 }
 

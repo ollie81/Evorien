@@ -9,12 +9,18 @@ export interface PostAuthor {
   passport_id: string;
 }
 
+export interface PostProject {
+  id: string;
+  name: string;
+}
+
 export interface FeedPost {
   id: string;
   content: string;
   pillar_code: string | null;
   created_at: string;
   author: PostAuthor | null;
+  project: PostProject | null;
   likeCount: number;
   commentCount: number;
   viewerHasLiked: boolean;
@@ -28,7 +34,14 @@ export interface PostComment {
 }
 
 async function attachEngagement(
-  posts: { id: string; content: string; pillar_code: string | null; created_at: string; profiles: PostAuthor | null }[],
+  posts: {
+    id: string;
+    content: string;
+    pillar_code: string | null;
+    created_at: string;
+    profiles: PostAuthor | null;
+    projects: PostProject | null;
+  }[],
   viewerId: string | null
 ): Promise<FeedPost[]> {
   if (posts.length === 0) return [];
@@ -58,17 +71,21 @@ async function attachEngagement(
     pillar_code: post.pillar_code,
     created_at: post.created_at,
     author: post.profiles,
+    project: post.projects,
     likeCount: likeCounts.get(post.id) ?? 0,
     commentCount: commentCounts.get(post.id) ?? 0,
     viewerHasLiked: viewerLikes.has(post.id),
   }));
 }
 
+const POST_SELECT =
+  "id, content, pillar_code, created_at, profiles(id, full_name, username, passport_id), projects(id, name)";
+
 export async function getFeedPosts(viewerId: string | null, limit = 20): Promise<FeedPost[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("posts")
-    .select("id, content, pillar_code, created_at, profiles(id, full_name, username, passport_id)")
+    .select(POST_SELECT)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -77,15 +94,23 @@ export async function getFeedPosts(viewerId: string | null, limit = 20): Promise
 
 export async function getPost(postId: string, viewerId: string | null): Promise<FeedPost | null> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("posts")
-    .select("id, content, pillar_code, created_at, profiles(id, full_name, username, passport_id)")
-    .eq("id", postId)
-    .maybeSingle();
+  const { data } = await supabase.from("posts").select(POST_SELECT).eq("id", postId).maybeSingle();
 
   if (!data) return null;
   const [post] = await attachEngagement([data as unknown as Parameters<typeof attachEngagement>[0][number]], viewerId);
   return post;
+}
+
+export async function getProjectPosts(projectId: string, viewerId: string | null, limit = 5): Promise<FeedPost[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("posts")
+    .select(POST_SELECT)
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  return attachEngagement((data ?? []) as unknown as Parameters<typeof attachEngagement>[0], viewerId);
 }
 
 export async function getPostComments(postId: string): Promise<PostComment[]> {

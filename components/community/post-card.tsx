@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { MessageCircle } from "lucide-react";
+import { Hammer, MessageCircle } from "lucide-react";
 import type { FeedPost } from "@/lib/data/community";
 import { profileDisplayName } from "@/lib/types";
 import { formatDistanceToNow } from "@/lib/format-date";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PillarBadge } from "@/components/shared/pillar-badge";
 import { ReportDialog } from "@/components/shared/report-dialog";
@@ -28,6 +29,15 @@ export function PostCard({ post, linkToDetail = true }: { post: FeedPost; linkTo
           </div>
           {post.pillar_code && <PillarBadge code={post.pillar_code} dense />}
         </div>
+
+        {post.project && (
+          <Link href={`/build/${post.project.id}`}>
+            <Badge variant="outline" className="gap-1">
+              <Hammer className="size-3" />
+              Update on {post.project.name}
+            </Badge>
+          </Link>
+        )}
 
         <p className="whitespace-pre-wrap text-sm leading-relaxed">{post.content}</p>
 

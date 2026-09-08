@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getProject, getProjectContributions, getProjectMembers } from "@/lib/data/projects";
+import { getProjectPosts } from "@/lib/data/community";
 import { getUserId } from "@/lib/auth";
 import { joinProjectAction } from "@/actions/projects";
 import { projectStageLabel, contributionTypeLabel } from "@/lib/constants/roles";
@@ -11,9 +12,11 @@ import { Button } from "@/components/ui/button";
 import { PillarBadge } from "@/components/shared/pillar-badge";
 import { SectionHeader } from "@/components/shared/section-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { HeartHandshake } from "lucide-react";
+import { HeartHandshake, MessageSquare } from "lucide-react";
 import { LogContributionDialog } from "@/components/build/log-contribution-dialog";
 import { ContributionReviewActions } from "@/components/build/contribution-review-actions";
+import { PostComposer } from "@/components/community/post-composer";
+import { PostCard } from "@/components/community/post-card";
 
 export default async function ProjectDetailPage({
   params,
@@ -21,11 +24,12 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [project, members, contributions, userId] = await Promise.all([
+  const userId = await getUserId();
+  const [project, members, contributions, posts] = await Promise.all([
     getProject(id),
     getProjectMembers(id),
     getProjectContributions(id),
-    getUserId(),
+    getProjectPosts(id, userId),
   ]);
 
   if (!project) notFound();
@@ -62,6 +66,26 @@ export default async function ProjectDetailPage({
           <Card>
             <CardContent>{project.looking_for}</CardContent>
           </Card>
+        </section>
+      )}
+
+      {isMember && (
+        <section className="space-y-3">
+          <SectionHeader title="Updates" />
+          <PostComposer lockedProject={{ id: project.id, name: project.name }} />
+          {posts.length === 0 ? (
+            <EmptyState
+              icon={MessageSquare}
+              title="No updates yet"
+              message="Share progress on this project with the network."
+            />
+          ) : (
+            <div className="space-y-2">
+              {posts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          )}
         </section>
       )}
 
