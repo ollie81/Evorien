@@ -1,21 +1,14 @@
-import { generateText } from "ai";
+import { generateText, stepCountIs } from "ai";
 import { getUserId } from "@/lib/auth";
 import { getAiModel } from "@/lib/ai/model";
 import { EVORIEN_AI_IDENTITY } from "@/lib/ai/identity";
 import { checkAiRateLimit, recordAiUsage } from "@/lib/ai/rate-limit";
+import { buildEvorienAiTools } from "@/lib/ai/tools";
+import { appendMessage, ensureConversation, loadConversationMessages } from "@/lib/ai/conversation";
 
 const MAX_MESSAGE_LENGTH = 4000;
+const MAX_TOOL_STEPS = 6;
 
-/**
- * Stage 2 of Evorien AI: prove secure server-to-OpenAI integration works,
- * with per-user rate limiting and usage tracking from the first request.
- *
- * Deliberately single-turn (no conversation history, no context engine,
- * no tools) — those are Stage 3+. This is a Route Handler, not a Server
- * Action, so unlike every other authorized write in this app it does NOT
- * get the (app) layout's redirect-based protection: it must check auth
- * itself, on every request.
- */
 export async function POST(request: Request) {
   const userId = await getUserId();
   if (!userId) {
@@ -32,6 +25,8 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null);
   const message = typeof body?.message === "string" ? body.message.trim() : "";
+  const requestedConversationId = typeof body?.conversationId === "string" ? body.conversationId : undefined;
+
   if (!message) {
     return Response.json({ error: "Message can't be empty." }, { status: 400 });
   }
@@ -51,22 +46,42 @@ export async function POST(request: Request) {
     return Response.json({ error: "Evorien AI isn't configured yet. Try again later." }, { status: 503 });
   }
 
+  let conversationId: string;
+  try {
+    conversationId = await ensureConversation(userId, requestedConversationId, message);
+  } catch (error) {
+    console.error("Evorien AI could not start a conversation:", error);
+    return Response.json({ error: "Could not start a conversation. Please try again." }, { status: 500 });
+  }
+
+  const history = await loadConversationMessages(conversationId);
+  await appendMessage(conversationId, "user", message);
+
   try {
     const result = await generateText({
       model,
       instructions: EVORIEN_AI_IDENTITY,
-      messages: [{ role: "user", content: message }],
+      messages: [...history, { role: "user" as const, content: message }],
+      tools: buildEvorienAiTools(userId),
+      stopWhen: stepCountIs(MAX_TOOL_STEPS),
     });
+
+    await appendMessage(conversationId, "assistant", result.text);
 
     await recordAiUsage({
       userId,
       model: modelName,
       promptTokens: result.usage?.inputTokens,
       completionTokens: result.usage?.outputTokens,
+      conversationId,
     });
 
+    const draftResult = result.toolResults.find((r) => r.toolName === "create_project_draft");
+
     return Response.json({
+      conversationId,
       reply: result.text,
+      draft: draftResult ? (draftResult.output as { draft: unknown }).draft : null,
       remaining: Math.max(0, rateLimit.remaining - 1),
       limit: rateLimit.limit,
     });

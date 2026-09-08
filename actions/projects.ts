@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireUserId } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/slugify";
+import { getOrCreateSkillId } from "@/lib/skills";
 
 /** Mirrors is_project_team() from the schema — an OWNER/ADMIN can manage the project's skills, opportunities and details. */
 async function isProjectManager(
@@ -22,21 +23,25 @@ async function isProjectManager(
   return Boolean(data && (data.role === "OWNER" || data.role === "ADMIN"));
 }
 
-export type CreateProjectFormState = { error?: string } | undefined;
+export interface NewProjectInput {
+  name: string;
+  tagline?: string;
+  description?: string;
+  pillarCode?: string;
+  stage?: string;
+  lookingFor?: string;
+  /** Skill names (not ids) — resolved via get-or-create so the caller never needs to know skill ids. */
+  skills?: string[];
+}
 
-export async function createProjectAction(
-  _prevState: CreateProjectFormState,
-  formData: FormData
-): Promise<CreateProjectFormState> {
-  const userId = await requireUserId();
-
-  const name = String(formData.get("name") ?? "").trim();
-  const tagline = String(formData.get("tagline") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
-  const pillarCode = String(formData.get("pillarCode") ?? "").trim();
-  const stage = String(formData.get("stage") ?? "IDEA").trim();
-  const lookingFor = String(formData.get("lookingFor") ?? "").trim();
-
+/**
+ * Shared by createProjectAction (the manual "New project" form) and
+ * createProjectFromAiDraftAction (Evorien AI's project builder, after the
+ * member explicitly confirms) — one insert path, not two, so a change to
+ * project-creation logic never has to be made twice.
+ */
+async function insertProject(userId: string, input: NewProjectInput): Promise<{ id: string } | { error: string }> {
+  const name = input.name.trim();
   if (name.length < 2) {
     return { error: "Enter a project name." };
   }
@@ -48,11 +53,11 @@ export async function createProjectAction(
       owner_id: userId,
       name,
       slug: slugify(name),
-      tagline: tagline || null,
-      description: description || null,
-      pillar_code: pillarCode || null,
-      stage,
-      looking_for: lookingFor || null,
+      tagline: input.tagline?.trim() || null,
+      description: input.description?.trim() || null,
+      pillar_code: input.pillarCode?.trim() || null,
+      stage: input.stage?.trim() || "IDEA",
+      looking_for: input.lookingFor?.trim() || null,
     })
     .select("id")
     .single();
@@ -61,8 +66,56 @@ export async function createProjectAction(
     return { error: "Could not create the project. Please try again." };
   }
 
+  const projectId = data.id as string;
+
+  for (const skillName of input.skills ?? []) {
+    const skillId = await getOrCreateSkillId(supabase, skillName);
+    if (skillId) {
+      await supabase.from("project_skills").upsert(
+        { project_id: projectId, skill_id: skillId },
+        { onConflict: "project_id,skill_id" }
+      );
+    }
+  }
+
   revalidatePath("/build");
-  redirect(`/build/${data.id}`);
+  return { id: projectId };
+}
+
+export type CreateProjectFormState = { error?: string } | undefined;
+
+export async function createProjectAction(
+  _prevState: CreateProjectFormState,
+  formData: FormData
+): Promise<CreateProjectFormState> {
+  const userId = await requireUserId();
+
+  const result = await insertProject(userId, {
+    name: String(formData.get("name") ?? ""),
+    tagline: String(formData.get("tagline") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    pillarCode: String(formData.get("pillarCode") ?? ""),
+    stage: String(formData.get("stage") ?? "IDEA"),
+    lookingFor: String(formData.get("lookingFor") ?? ""),
+  });
+
+  if ("error" in result) {
+    return { error: result.error };
+  }
+
+  redirect(`/build/${result.id}`);
+}
+
+export type CreateProjectFromDraftState = { error?: string; id?: string } | undefined;
+
+/** Called only from the confirm button on Evorien AI's project-draft card — never by the AI itself. */
+export async function createProjectFromAiDraftAction(input: NewProjectInput): Promise<CreateProjectFromDraftState> {
+  const userId = await requireUserId();
+  const result = await insertProject(userId, input);
+  if ("error" in result) {
+    return { error: result.error };
+  }
+  return { id: result.id };
 }
 
 export async function joinProjectAction(projectId: string) {
@@ -197,18 +250,8 @@ export async function addProjectSkillAction(
     return { error: "Only the project's owner or admins can manage skills needed." };
   }
 
-  const { data: existing } = await supabase.from("skills").select("id").ilike("name", name).maybeSingle();
-  let skillId = existing?.id as string | undefined;
-
-  if (!skillId) {
-    const { data: created, error: createError } = await supabase
-      .from("skills")
-      .insert({ name })
-      .select("id")
-      .single();
-    if (createError) return { error: "Could not add that skill." };
-    skillId = created.id as string;
-  }
+  const skillId = await getOrCreateSkillId(supabase, name);
+  if (!skillId) return { error: "Could not add that skill." };
 
   const { error } = await supabase
     .from("project_skills")

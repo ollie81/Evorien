@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUserId } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getOrCreateSkillId } from "@/lib/skills";
 
 export type UpdateProfileFormState = { error?: string } | undefined;
 
@@ -69,23 +70,8 @@ export async function addSkillAction(
 
   const supabase = await createClient();
 
-  const { data: existing } = await supabase
-    .from("skills")
-    .select("id")
-    .ilike("name", name)
-    .maybeSingle();
-
-  let skillId = existing?.id as string | undefined;
-
-  if (!skillId) {
-    const { data: created, error: createError } = await supabase
-      .from("skills")
-      .insert({ name })
-      .select("id")
-      .single();
-    if (createError) return { error: "Could not add that skill." };
-    skillId = created.id as string;
-  }
+  const skillId = await getOrCreateSkillId(supabase, name);
+  if (!skillId) return { error: "Could not add that skill." };
 
   const { error } = await supabase
     .from("profile_skills")

@@ -137,18 +137,22 @@ you, but you no longer need to write SQL to add it either.
 
 ---
 
-## 7. Add Evorien AI (optional, Stage 2 of an ongoing build)
+## 7. Add Evorien AI
 
-Evorien AI is an intelligence layer being added on top of everything above —
-it will eventually help members find people, projects and opportunities
-that match them, understand the Charter and governance, and turn an idea
-into a real project. It reuses this app's existing data and login system;
-it is not a separate app.
+Evorien AI is an intelligence layer over everything above — it helps a
+member find people, projects and opportunities that match them, understand
+the Charter and governance, and turn an idea into a real project. It reuses
+this app's existing data, login system and Server Actions; it is not a
+separate app, and it doesn't get its own copy of your data.
 
-**Where this stands right now:** the secure server-side wiring is built and
-tested — a member can talk to Evorien AI programmatically — but there is
-**no chat screen in the app yet**. That's the next stage. This section is
-just how to switch the backend on.
+**Where this stands right now:** there's a real "Ask Evorien AI" screen
+(linked from Home, or go straight to `/ai`), backed by nine read-only tools
+the model calls to look up real projects, members, skills, opportunities,
+the member's own Passport, City/pillar info, the Charter, and governance
+proposals — never a static description baked into a prompt. It can also
+turn a conversation into a structured project draft, which it can never
+create on its own: creating it happens only when the member clicks a real
+"Create this project" button in the UI.
 
 1. Get an OpenAI API key, if you don't already have one: go to
    <https://platform.openai.com>, sign in (or create an account), open
@@ -169,17 +173,43 @@ just how to switch the backend on.
 3. Redeploy (Vercel does this automatically on your next push, or click
    **Redeploy** on the latest deployment).
 
-That's it for Stage 2 — there's nothing to click in the app itself yet.
-The next stage adds the actual "Ask Evorien AI" screen members will use.
+### What Evorien AI can look up (and how it stays scoped)
+
+Nine tools, each a thin, validated wrapper around this app's own data
+functions — the AI never queries the database directly:
+
+| Tool | What it can see |
+|---|---|
+| `search_projects` | Real active projects — by text, pillar, or a skill still needed |
+| `search_members` | Real members' public profile info — by text, pillar, or skill |
+| `search_skills` | Whether a skill already exists, and its exact name |
+| `search_opportunities` | Real open opportunities |
+| `get_user_context` | The **calling member's own** Passport, skills, reputation, connections |
+| `get_user_projects` | The **calling member's own** projects and role on each |
+| `get_city_information` | The five pillars + real City locations, with their real status |
+| `get_charter_information` | The actual currently-published Charter, if any |
+| `get_governance_information` | Real governance proposals — described neutrally, never how to vote |
+
+Every tool runs as the signed-in member making the request (never a
+service-role/admin client), so it can never see more than that member
+could already see in the app. `get_user_context` and `get_user_projects`
+are hard-coded to "the caller" — there's no parameter for "whose profile,"
+so the model has no way to ask for someone else's.
 
 ### What Evorien AI never does
 
 - It never fabricates members, projects, funding, partnerships, cities, or
-  statistics — if it doesn't have real information, it says so.
+  statistics — every fact it states comes from a tool call above, and it's
+  told to say so plainly when it doesn't have real information.
 - It never speaks for Evorien's governance or tells anyone how to vote.
+- It never claims Evorien owns land, controls territory, or operates a
+  city unless a location's real database status actually says so.
 - It never sees your OpenAI key, Supabase's admin credentials, private
-  verification evidence, or another member's private data — only what a
-  Route Handler explicitly, deliberately hands it for one request.
+  verification evidence, or another member's private data.
+- It never creates a project by itself — `create_project_draft` only
+  validates and returns a structure for the member to review; the database
+  insert happens from an ordinary Server Action triggered by a real button
+  click, a code path the AI has no access to.
 - Every AI request is checked against your own sign-in (no anonymous use)
   and against the daily limit above before it ever reaches OpenAI.
 
@@ -214,9 +244,16 @@ lib/
   ai/               Evorien AI: model.ts (OpenAI wrapper, reads
                     OPENAI_API_KEY/AI_MODEL), identity.ts (persona + hard
                     rules), rate-limit.ts (daily per-member cap, backed by
-                    ai_usage)
+                    ai_usage), tools.ts (the 9 read-only tools + the
+                    project-draft tool), conversation.ts (loads/saves
+                    ai_conversations/ai_messages, scoped to the caller)
+  skills.ts         getOrCreateSkillId() — shared by Passport skills,
+                    project skills, and Evorien AI's project builder so
+                    "add a skill by name" only has one implementation
 components/
   ui/               shadcn/ui primitives (generated — safe to customize further)
+  ai/               The chat UI (ai-chat.tsx) and the project-draft card
+                    with its real "Create this project" button
   nav/ shared/ auth/ onboarding/ passport/ build/ city/ discover/
   community/ notifications/ admin/
                     Feature UI, organized to match the app/ structure
@@ -303,14 +340,18 @@ test project (never the founding members' live database) which hasn't been
 provisioned, so every Server Action and RLS policy is still verified by
 hand against the real schema rather than by an automated suite.
 
-**Evorien AI:** Stage 2 of an ongoing, staged build (see section 7 above) —
-secure server-side integration with OpenAI, a fixed non-human identity/
-persona with hard rules against fabricating members, projects, funding or
-governance outcomes, and per-member daily rate limiting backed by a real
-usage ledger (`ai_usage`, plus `ai_conversations`/`ai_messages` for the
-chat history the next stage will actually populate). No chat interface
-exists in the app yet — that, along with connecting real Evorien context
-(profile, skills, projects) to what the AI can see, is the next stage.
+**Evorien AI:** an ongoing, staged build (see section 7 above) — a real
+"Ask Evorien AI" chat (linked from Home, at `/ai`) grounded in nine
+server-side tools that query this app's actual projects, members, skills,
+opportunities, the caller's own Passport, City/pillar info, the Charter,
+and governance proposals — never a static prompt pretending to know
+Evorien. It can turn a conversation into a structured project draft, which
+only gets created when the member clicks a real confirm button; the model
+itself has no path to writing to the database. Backed by a fixed
+non-human identity/persona, per-member daily rate limiting, and a real
+usage ledger (`ai_usage`, `ai_conversations`, `ai_messages`). Not yet
+built: member/opportunity matching beyond direct search, and contextual
+"Ask Evorien AI" entry points on Build/Discover/Passport/City beyond Home.
 
 **Not built yet, by design:**
 - Analytics dashboard beyond the admin overview's live counters.

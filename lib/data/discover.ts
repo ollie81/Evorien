@@ -8,8 +8,20 @@ export interface DiscoverQuery {
   pillar?: string;
 }
 
-export async function searchPeople({ q, pillar }: DiscoverQuery): Promise<Profile[]> {
+export async function searchPeople({
+  q,
+  pillar,
+  skillIds,
+}: DiscoverQuery & { skillIds?: string[] }): Promise<Profile[]> {
   const supabase = await createClient();
+
+  let matchingProfileIds: string[] | null = null;
+  if (skillIds && skillIds.length > 0) {
+    const { data: matches } = await supabase.from("profile_skills").select("profile_id").in("skill_id", skillIds);
+    matchingProfileIds = Array.from(new Set((matches ?? []).map((m) => m.profile_id as string)));
+    if (matchingProfileIds.length === 0) return [];
+  }
+
   let query = supabase.from("profiles").select("*").eq("onboarding_completed", true);
 
   if (pillar) query = query.contains("pillars", [pillar]);
@@ -17,6 +29,7 @@ export async function searchPeople({ q, pillar }: DiscoverQuery): Promise<Profil
     const term = q.trim();
     query = query.or(`full_name.ilike.%${term}%,username.ilike.%${term}%,country.ilike.%${term}%`);
   }
+  if (matchingProfileIds) query = query.in("id", matchingProfileIds);
 
   const { data } = await query.order("created_at", { ascending: false }).limit(30);
   return (data ?? []) as Profile[];
