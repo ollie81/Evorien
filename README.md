@@ -233,8 +233,15 @@ heartbeat/presence mechanism, RLS-locked so no member can see another
 member's individual activity, only the aggregate count, which updates
 every 15 seconds without a page reload.
 
+**Automated tests:** Vitest is set up (`npm test`) with unit tests for the
+codebase's pure logic — label lookups, `profileDisplayName`'s fallback
+chain, date/time formatting, slug generation. Deliberately not attempted
+yet: integration tests against Supabase itself. That needs a real, separate
+test project (never the founding members' live database) which hasn't been
+provisioned, so every Server Action and RLS policy is still verified by
+hand against the real schema rather than by an automated suite.
+
 **Not built yet, by design:**
-- Automated tests — not yet set up for this Next.js codebase.
 - Analytics dashboard beyond the admin overview's live counters.
 - Payments / premium subscriptions (Phase G) — deliberately not built into
   V1 per the product principles: no fundraising, no token, no investment
@@ -248,6 +255,7 @@ every 15 seconds without a page reload.
 npm run dev     # local development server, http://localhost:3000
 npm run build   # production build — should complete with no errors
 npm run start   # run the production build locally
+npm test        # run the unit test suite (Vitest)
 npx eslint .    # lint
 npx tsc --noEmit  # type-check without emitting files
 ```

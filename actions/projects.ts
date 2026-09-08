@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUserId } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { slugify } from "@/lib/slugify";
 
 /** Mirrors is_project_team() from the schema — an OWNER/ADMIN can manage the project's skills, opportunities and details. */
 async function isProjectManager(
@@ -19,16 +20,6 @@ async function isProjectManager(
     .eq("status", "ACTIVE")
     .maybeSingle();
   return Boolean(data && (data.role === "OWNER" || data.role === "ADMIN"));
-}
-
-function slugify(name: string) {
-  const base = name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-");
-  const suffix = Math.random().toString(36).slice(2, 8);
-  return base ? `${base}-${suffix}` : `project-${suffix}`;
 }
 
 export type CreateProjectFormState = { error?: string } | undefined;
