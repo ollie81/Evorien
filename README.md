@@ -201,9 +201,11 @@ feed — post as a general update or tag one of your own active
 projects, and every project's own page has an Updates section for its
 team — a second Community tab for events: any member can host one (online
 or in person, with a start time and optional end time), the organizer
-marks it completed or cancelled, and completing one is what pays out the
+marks it completed or cancelled, completing one is what pays out the
 EVENT_ORGANIZED reputation trigger, which existed since the original
-schema but had no way to ever fire — in-app notifications (bell in the nav + a full page), triggered by
+schema but had no way to ever fire, and the nearest few upcoming events
+also preview on Home the same read-only way Projects and Opportunities
+already do — in-app notifications (bell in the nav + a full page), triggered by
 database events rather than polled, covering a new connection request, your
 connection request being accepted, a new application on an opportunity you
 posted, your own application being accepted or rejected, your contribution

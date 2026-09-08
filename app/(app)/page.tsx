@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Circle, CircleCheck, Hammer, MessageSquare, Sparkles } from "lucide-react";
+import { Calendar, Circle, CircleCheck, Hammer, MessageSquare, Sparkles } from "lucide-react";
 import { requireUserId } from "@/lib/auth";
 import { getMyProfile, getMySkills } from "@/lib/data/profile";
 import { getNetworkStats, getRecentOpportunities, getRecentProjects } from "@/lib/data/home";
@@ -8,8 +8,10 @@ import { getFeedPosts } from "@/lib/data/community";
 import { getMyContributions, getMyProjects } from "@/lib/data/projects";
 import { getMyConnectionsByOtherId } from "@/lib/data/connections";
 import { getLiveActivity } from "@/lib/data/presence";
+import { getUpcomingEvents } from "@/lib/data/events";
 import { profileDisplayName } from "@/lib/types";
 import { opportunityTypeLabel } from "@/lib/constants/roles";
+import { formatEventTime } from "@/lib/format-date";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionHeader } from "@/components/shared/section-header";
@@ -24,12 +26,13 @@ export const metadata: Metadata = { title: "Home" };
 
 export default async function HomePage() {
   const userId = await requireUserId();
-  const [profile, stats, projects, opportunities, posts, skills, myProjects, myContributions, connections, live] =
+  const [profile, stats, projects, opportunities, events, posts, skills, myProjects, myContributions, connections, live] =
     await Promise.all([
       getMyProfile(),
       getNetworkStats(),
       getRecentProjects(),
       getRecentOpportunities(),
+      getUpcomingEvents(3),
       getFeedPosts(userId, 3),
       getMySkills(userId),
       getMyProjects(userId),
@@ -189,6 +192,38 @@ export default async function HomePage() {
                 <CardContent>
                   <p className="font-medium">{o.title}</p>
                   <p className="text-sm text-muted-foreground">{opportunityTypeLabel(o.type)}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <SectionHeader
+          title="Upcoming Events"
+          action={
+            <Button variant="ghost" size="sm" render={<Link href="/community?tab=events">See all</Link>} />
+          }
+        />
+        {events.length === 0 ? (
+          <EmptyState
+            icon={Calendar}
+            title="No upcoming events"
+            message="Events hosted by members — online or in person — will appear here."
+          />
+        ) : (
+          <div className="space-y-2">
+            {events.map((event) => (
+              <Card key={event.id}>
+                <CardContent className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-medium">{event.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatEventTime(event.starts_at, event.ends_at)}
+                    </p>
+                  </div>
+                  {event.pillar_code && <PillarBadge code={event.pillar_code} dense />}
                 </CardContent>
               </Card>
             ))}

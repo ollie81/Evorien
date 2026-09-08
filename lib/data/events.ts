@@ -20,13 +20,14 @@ export interface EvorienEvent {
 const EVENT_SELECT =
   "id, organizer_id, title, description, pillar_code, location, is_online, starts_at, ends_at, status, organizer:profiles!events_organizer_id_fkey(id, full_name, username, passport_id)";
 
-export async function getUpcomingEvents(): Promise<EvorienEvent[]> {
+export async function getUpcomingEvents(limit = 50): Promise<EvorienEvent[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("events")
     .select(EVENT_SELECT)
     .eq("status", "SCHEDULED")
-    .order("starts_at", { ascending: true });
+    .order("starts_at", { ascending: true })
+    .limit(limit);
   return (data ?? []) as unknown as EvorienEvent[];
 }
 
