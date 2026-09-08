@@ -117,12 +117,15 @@ async function OpportunitiesTab() {
 }
 
 async function ContributionsTab({ userId }: { userId: string }) {
-  const contributions = await getMyContributions(userId);
+  const [contributions, myProjects] = await Promise.all([
+    getMyContributions(userId),
+    getMyProjects(userId),
+  ]);
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <LogContributionDialog />
+        <LogContributionDialog projects={myProjects.map((p) => ({ id: p.id, name: p.name }))} />
       </div>
       {contributions.length === 0 ? (
         <EmptyState
@@ -139,7 +142,13 @@ async function ContributionsTab({ userId }: { userId: string }) {
                   <p className="font-medium">{c.title}</p>
                   <p className="text-sm text-muted-foreground">{contributionTypeLabel(c.type)}</p>
                 </div>
-                <Badge variant="secondary">{c.status}</Badge>
+                <Badge
+                  variant={
+                    c.status === "ACCEPTED" ? "default" : c.status === "DECLINED" ? "destructive" : "secondary"
+                  }
+                >
+                  {c.status}
+                </Badge>
               </CardContent>
             </Card>
           ))}

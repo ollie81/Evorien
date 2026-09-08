@@ -88,14 +88,35 @@ export async function createContributionAction(
   const type = String(formData.get("type") ?? "OTHER");
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
+  const projectId = String(formData.get("projectId") ?? "").trim();
 
   if (!title) {
     return { error: "Describe what you're contributing." };
   }
+  if (!projectId) {
+    return { error: "Pick which project this contribution is for." };
+  }
 
   const supabase = await createClient();
+
+  // A contribution can only ever be reviewed by a project's team (see
+  // contributions_update RLS), so it must genuinely belong to a project the
+  // member is active on — not just any project id someone could pass in.
+  const { data: membership } = await supabase
+    .from("project_members")
+    .select("project_id")
+    .eq("project_id", projectId)
+    .eq("profile_id", userId)
+    .eq("status", "ACTIVE")
+    .maybeSingle();
+
+  if (!membership) {
+    return { error: "You're not an active member of that project." };
+  }
+
   const { error } = await supabase.from("contributions").insert({
     profile_id: userId,
+    project_id: projectId,
     type,
     title,
     description: description || null,
@@ -106,5 +127,45 @@ export async function createContributionAction(
   }
 
   revalidatePath("/build");
+  revalidatePath(`/build/${projectId}`);
   return { success: true };
+}
+
+export async function respondToContributionAction(contributionId: string, accept: boolean) {
+  const userId = await requireUserId();
+  const supabase = await createClient();
+
+  const { data: contribution } = await supabase
+    .from("contributions")
+    .select("project_id")
+    .eq("id", contributionId)
+    .maybeSingle();
+
+  if (!contribution?.project_id) {
+    throw new Error("This contribution isn't linked to a project.");
+  }
+
+  const { data: membership } = await supabase
+    .from("project_members")
+    .select("role")
+    .eq("project_id", contribution.project_id)
+    .eq("profile_id", userId)
+    .eq("status", "ACTIVE")
+    .maybeSingle();
+
+  if (!membership || !["OWNER", "ADMIN"].includes(membership.role)) {
+    throw new Error("Only the project's owner or admins can review contributions.");
+  }
+
+  const { error } = await supabase
+    .from("contributions")
+    .update({ status: accept ? "ACCEPTED" : "DECLINED", reviewed_by: userId })
+    .eq("id", contributionId);
+
+  if (error) {
+    throw new Error("Could not update this contribution.");
+  }
+
+  revalidatePath(`/build/${contribution.project_id}`);
+  revalidatePath("/build");
 }

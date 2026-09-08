@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
-import type { Contribution, Opportunity, Project, ProjectMember } from "@/lib/types";
+import type { Contribution, Opportunity, Profile, Project, ProjectMember } from "@/lib/types";
 
 export async function getMyProjects(userId: string): Promise<(Project & { my_role: string })[]> {
   const supabase = await createClient();
@@ -52,4 +52,18 @@ export async function getMyContributions(userId: string): Promise<Contribution[]
     .eq("profile_id", userId)
     .order("created_at", { ascending: false });
   return (data ?? []) as Contribution[];
+}
+
+export interface ProjectContribution extends Contribution {
+  contributor: Pick<Profile, "id" | "full_name" | "username" | "passport_id"> | null;
+}
+
+export async function getProjectContributions(projectId: string): Promise<ProjectContribution[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("contributions")
+    .select("*, contributor:profiles!contributions_profile_id_fkey(id, full_name, username, passport_id)")
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false });
+  return (data ?? []) as unknown as ProjectContribution[];
 }

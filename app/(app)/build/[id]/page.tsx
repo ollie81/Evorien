@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
-import { getProject, getProjectMembers } from "@/lib/data/projects";
+import { getProject, getProjectContributions, getProjectMembers } from "@/lib/data/projects";
 import { getUserId } from "@/lib/auth";
 import { joinProjectAction } from "@/actions/projects";
-import { projectStageLabel } from "@/lib/constants/roles";
+import { projectStageLabel, contributionTypeLabel } from "@/lib/constants/roles";
 import { profileDisplayName } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { PillarBadge } from "@/components/shared/pillar-badge";
 import { SectionHeader } from "@/components/shared/section-header";
+import { EmptyState } from "@/components/shared/empty-state";
+import { HeartHandshake } from "lucide-react";
+import { LogContributionDialog } from "@/components/build/log-contribution-dialog";
+import { ContributionReviewActions } from "@/components/build/contribution-review-actions";
 
 export default async function ProjectDetailPage({
   params,
@@ -17,15 +21,18 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [project, members, userId] = await Promise.all([
+  const [project, members, contributions, userId] = await Promise.all([
     getProject(id),
     getProjectMembers(id),
+    getProjectContributions(id),
     getUserId(),
   ]);
 
   if (!project) notFound();
 
-  const isMember = members.some((m) => m.profiles?.id === userId);
+  const myMembership = members.find((m) => m.profiles?.id === userId);
+  const isMember = Boolean(myMembership);
+  const canReview = myMembership?.role === "OWNER" || myMembership?.role === "ADMIN";
 
   return (
     <div className="space-y-8">
@@ -77,6 +84,53 @@ export default async function ProjectDetailPage({
           })}
         </div>
       </section>
+
+      {isMember && (
+        <section className="space-y-3">
+          <SectionHeader
+            title="Contributions"
+            action={<LogContributionDialog projects={[{ id: project.id, name: project.name }]} />}
+          />
+          {contributions.length === 0 ? (
+            <EmptyState
+              icon={HeartHandshake}
+              title="No contributions logged yet"
+              message="Contributions team members make to this project will appear here."
+            />
+          ) : (
+            <div className="space-y-2">
+              {contributions.map((c) => (
+                <Card key={c.id}>
+                  <CardContent className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium">{c.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {contributionTypeLabel(c.type)}
+                        {c.contributor && ` · ${profileDisplayName(c.contributor)}`}
+                      </p>
+                    </div>
+                    {canReview && c.status === "PENDING" ? (
+                      <ContributionReviewActions contributionId={c.id} />
+                    ) : (
+                      <Badge
+                        variant={
+                          c.status === "ACCEPTED"
+                            ? "default"
+                            : c.status === "DECLINED"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                      >
+                        {c.status}
+                      </Badge>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {userId && !isMember && (
         <form action={joinProjectAction.bind(null, project.id)}>

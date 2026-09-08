@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export function LogContributionDialog() {
+export function LogContributionDialog({ projects }: { projects: { id: string; name: string }[] }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -39,6 +39,14 @@ export function LogContributionDialog() {
     });
   }
 
+  if (projects.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Join or create a project before logging a contribution to it.
+      </p>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
@@ -53,6 +61,30 @@ export function LogContributionDialog() {
           <DialogTitle>Log a contribution</DialogTitle>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-4">
+          {projects.length === 1 ? (
+            <input type="hidden" name="projectId" value={projects[0].id} />
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="projectId">Project</Label>
+              <Select name="projectId" defaultValue={projects[0].id}>
+                <SelectTrigger id="projectId" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {projects.length === 1 && (
+            <p className="text-sm text-muted-foreground">
+              Contributing to <span className="font-medium text-foreground">{projects[0].name}</span>
+            </p>
+          )}
           <div className="space-y-2">
             <Label htmlFor="type">Type</Label>
             <Select name="type" defaultValue="SKILLS">
