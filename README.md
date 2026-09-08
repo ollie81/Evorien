@@ -203,8 +203,13 @@ or engagement) for having a contribution accepted, joining or completing a
 project, getting a skill verified, casting a vote, creating a proposal, or
 organizing an event that runs to completion. Also built: member-to-member
 connections (a Connect button in Discover, request/accept/decline, and a
-network view on the Passport), and a public `/welcome` vision page that
-signed-out visitors land on instead of a bare sign-in form.
+network view on the Passport), a public `/welcome` vision page that
+signed-out visitors land on instead of a bare sign-in form, and a live
+network activity indicator on Home and Discover (members online right
+now, active projects, countries, new members today) — a real
+heartbeat/presence mechanism, RLS-locked so no member can see another
+member's individual activity, only the aggregate count, which updates
+every 15 seconds without a page reload.
 
 **Not built yet, by design:**
 - Automated tests — not yet set up for this Next.js codebase.
