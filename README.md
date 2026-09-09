@@ -373,6 +373,29 @@ never loses the reply or lets an interrupted request dodge the daily
 limit. A project draft or the update to the daily-limit count still only
 reaches the client once the reply is fully generated, in that final event.
 
+**Chat history and AI memory — two deliberately separate systems.**
+"Chat history" is the conversations themselves: `/ai/history` lists every
+past conversation (title, last-updated time, delete one or delete all),
+clicking one opens `/ai/[conversationId]` and continues it — the URL
+updates to a new conversation's real id the moment it's created
+(`router.replace`, so a refresh never loses the thread), and streaming
+works identically there as on a fresh chat. "AI memory" is a separate,
+much smaller thing: short, durable facts (`ai_memories` — goal, interest,
+preference, project context, or decision) the model chooses to save via a
+`save_memory` tool call, never an automatic copy of a message — the one
+deliberate exception to every other AI tool being read-only, justified
+because a memory row is private, member-visible, and member-deletable
+(`/ai/memory`), unlike a public action such as creating a project. Memory
+is never sent in bulk: a short, recency-capped digest (12 memories) is
+appended to the model's instructions, after its base identity, only when
+the member has personalized memory turned on — the toggle is a real
+opt-out of both reading and writing, not just display. Both systems are
+scoped by RLS to their owner alone (no admin override on either table,
+matching how private conversations already were), and neither is more
+authoritative than a live tool call: a hard rule in `lib/ai/identity.ts`
+tells the model to trust `get_user_context`/`get_user_projects` over its
+own memory notes whenever they disagree.
+
 **Monetization foundation:** the guiding rule is "don't charge people for
 belonging, charge for additional value" — free membership (Passport,
 discovery, joining/creating projects, community, a reasonable amount of

@@ -11,6 +11,8 @@ import { getCities, getCurrentCharter, getGovernanceProposals } from "@/lib/data
 import { profileDisplayName } from "@/lib/types";
 import { PILLARS, type PillarCode } from "@/lib/constants/pillars";
 import { OPPORTUNITY_TYPES, PROJECT_STAGES, opportunityTypeLabel, projectStageLabel } from "@/lib/constants/roles";
+import { saveMemory } from "@/lib/ai/memory";
+import { MEMORY_TYPES } from "@/lib/ai/memory-types";
 
 const PILLAR_CODES = PILLARS.map((p) => p.code) as [PillarCode, ...PillarCode[]];
 
@@ -25,13 +27,21 @@ async function findSkillId(supabase: Awaited<ReturnType<typeof createClient>>, n
  * the route before this is ever called — never taken from model input) and
  * reads through the same RLS-respecting server client every Server Action
  * uses. Nothing here can see more than that member could already see in the
- * app, and nothing here writes to the database — create_project_draft only
- * validates and echoes back a structure for the member to review; the actual
- * insert happens from a real confirm button in the UI, never from the model
- * deciding on its own that confirmation happened.
+ * app. With one deliberate exception (save_memory, added below only when
+ * memoryEnabled), nothing here writes to the database — create_project_draft
+ * only validates and echoes back a structure for the member to review; the
+ * actual insert happens from a real confirm button in the UI, never from the
+ * model deciding on its own that confirmation happened. save_memory is
+ * different in kind, not just degree: it writes only to a private,
+ * member-owned, member-deletable table (never anything public or visible to
+ * anyone else), which is why it doesn't need the same human-confirm gate.
  */
-export function buildEvorienAiTools(userId: string) {
-  return {
+export function buildEvorienAiTools(
+  userId: string,
+  conversationId: string | undefined,
+  options: { memoryEnabled: boolean }
+) {
+  const tools = {
     search_projects: tool({
       description:
         "Search Evorien's real, active projects. Use this whenever a member asks to find a project, e.g. by topic, pillar, or a skill it needs. Never invent projects — only report what this returns.",
@@ -286,6 +296,25 @@ export function buildEvorienAiTools(userId: string) {
       execute: async (draft) => {
         return { draft };
       },
+    }),
+  };
+
+  if (!options.memoryEnabled) return tools;
+
+  return {
+    ...tools,
+    save_memory: tool({
+      description:
+        "Save ONE short, durable fact about the member that would help personalize future conversations — a stated goal, interest, preference, project they're working on, or a useful decision. Use this rarely, only for genuinely useful long-term information the member clearly stated, never for routine chat, and never more than once or twice per conversation. Never save sensitive information (health, finances, legal/immigration status, etc.). Skills belong on the member's Passport, not here — don't save a memory just to record a skill.",
+      inputSchema: z.object({
+        memoryType: z.enum(MEMORY_TYPES),
+        content: z
+          .string()
+          .min(3)
+          .max(300)
+          .describe("A short, third-person, distilled note — not a copy of the member's message."),
+      }),
+      execute: async ({ memoryType, content }) => saveMemory(userId, memoryType, content, conversationId),
     }),
   };
 }

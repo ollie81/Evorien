@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   getAiModel: vi.fn(),
   buildEvorienAiTools: vi.fn(),
   streamText: vi.fn(),
+  getMemorySettings: vi.fn(),
+  buildMemoryContext: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ getUserId: mocks.getUserId }));
@@ -25,6 +27,10 @@ vi.mock("@/lib/ai/conversation", () => ({
 vi.mock("@/lib/ai/model", () => ({ getAiModel: mocks.getAiModel }));
 vi.mock("@/lib/ai/tools", () => ({ buildEvorienAiTools: mocks.buildEvorienAiTools }));
 vi.mock("@/lib/ai/identity", () => ({ EVORIEN_AI_IDENTITY: "test identity" }));
+vi.mock("@/lib/ai/memory", () => ({
+  getMemorySettings: mocks.getMemorySettings,
+  buildMemoryContext: mocks.buildMemoryContext,
+}));
 vi.mock("ai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("ai")>();
   return { ...actual, streamText: mocks.streamText };
@@ -85,6 +91,8 @@ beforeEach(() => {
   mocks.recordAiUsage.mockResolvedValue(undefined);
   mocks.getAiModel.mockReturnValue({});
   mocks.buildEvorienAiTools.mockReturnValue({});
+  mocks.getMemorySettings.mockResolvedValue(true);
+  mocks.buildMemoryContext.mockResolvedValue("");
 });
 
 describe("POST /api/ai/chat streaming", () => {
@@ -105,7 +113,7 @@ describe("POST /api/ai/chat streaming", () => {
 
     const events = await readAllEvents(res);
     expect(events.filter((e) => e.type === "delta").map((e) => e.text).join("")).toBe("Hello world");
-    expect(events.at(-1)).toEqual({ type: "done", draft: null });
+    expect(events.at(-1)).toEqual({ type: "done", draft: null, memorySaved: null });
 
     expect(mocks.appendMessage).toHaveBeenCalledTimes(2);
     expect(mocks.appendMessage).toHaveBeenLastCalledWith("conv-1", "assistant", "Hello world");
@@ -129,7 +137,55 @@ describe("POST /api/ai/chat streaming", () => {
     const events = await readAllEvents(res);
 
     expect(events.filter((e) => e.type === "delta").every((e) => !e.text?.includes("{"))).toBe(true);
-    expect(events.at(-1)).toEqual({ type: "done", draft: { name: "Mock Project" } });
+    expect(events.at(-1)).toEqual({ type: "done", draft: { name: "Mock Project" }, memorySaved: null });
+  });
+
+  it("surfaces a saved memory's content in the done event when save_memory was called", async () => {
+    mocks.streamText.mockReturnValue(
+      makeStreamTextResult({
+        chunks: ["Got it, noted."],
+        text: "Got it, noted.",
+        usage: { inputTokens: 15, outputTokens: 6 },
+        toolResults: [
+          {
+            toolName: "save_memory",
+            input: { memoryType: "GOAL", content: "Wants to launch a renewable-energy project." },
+            output: { saved: true },
+          } as unknown as { toolName: string; output: unknown },
+        ],
+      })
+    );
+
+    const res = await POST(makeRequest({ message: "I'm building a renewable-energy project" }));
+    const events = await readAllEvents(res);
+
+    expect(events.at(-1)).toEqual({
+      type: "done",
+      draft: null,
+      memorySaved: "Wants to launch a renewable-energy project.",
+    });
+  });
+
+  it("does not surface memorySaved when save_memory declined to save (e.g. cap reached)", async () => {
+    mocks.streamText.mockReturnValue(
+      makeStreamTextResult({
+        chunks: ["Okay."],
+        text: "Okay.",
+        usage: { inputTokens: 10, outputTokens: 3 },
+        toolResults: [
+          {
+            toolName: "save_memory",
+            input: { memoryType: "GOAL", content: "Something" },
+            output: { saved: false, reason: "Memory is full." },
+          } as unknown as { toolName: string; output: unknown },
+        ],
+      })
+    );
+
+    const res = await POST(makeRequest({ message: "hi" }));
+    const events = await readAllEvents(res);
+
+    expect(events.at(-1)).toEqual({ type: "done", draft: null, memorySaved: null });
   });
 
   it("keeps generating and still persists + records usage after the client disconnects mid-stream", async () => {

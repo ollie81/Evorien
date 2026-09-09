@@ -5,6 +5,7 @@ import { EVORIEN_AI_IDENTITY } from "@/lib/ai/identity";
 import { checkAiRateLimit, recordAiUsage } from "@/lib/ai/rate-limit";
 import { buildEvorienAiTools } from "@/lib/ai/tools";
 import { appendMessage, ensureConversation, loadConversationMessages } from "@/lib/ai/conversation";
+import { buildMemoryContext, getMemorySettings } from "@/lib/ai/memory";
 
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_TOOL_STEPS = 6;
@@ -69,11 +70,17 @@ export async function POST(request: Request) {
   const history = await loadConversationMessages(conversationId);
   await appendMessage(conversationId, "user", message);
 
+  const memoryEnabled = await getMemorySettings(userId);
+  const memoryContext = memoryEnabled ? await buildMemoryContext(userId) : "";
+
   const result = streamText({
     model,
-    instructions: EVORIEN_AI_IDENTITY,
-    messages: [...history, { role: "user" as const, content: message }],
-    tools: buildEvorienAiTools(userId),
+    instructions: memoryContext ? `${EVORIEN_AI_IDENTITY}\n\n${memoryContext}` : EVORIEN_AI_IDENTITY,
+    messages: [
+      ...history.map(({ role, content }) => ({ role, content })),
+      { role: "user" as const, content: message },
+    ],
+    tools: buildEvorienAiTools(userId, conversationId, { memoryEnabled }),
     stopWhen: stepCountIs(MAX_TOOL_STEPS),
     onError: ({ error }) => {
       console.error("Evorien AI model call failed:", error);
@@ -117,7 +124,17 @@ export async function POST(request: Request) {
         });
 
         const draftResult = toolResults.find((r) => r.toolName === "create_project_draft");
-        send({ type: "done", draft: draftResult ? (draftResult.output as { draft: unknown }).draft : null });
+        const memoryResult = toolResults.find((r) => r.toolName === "save_memory");
+        const memorySaved =
+          memoryResult && (memoryResult.output as { saved: boolean }).saved
+            ? (memoryResult.input as { content: string }).content
+            : null;
+
+        send({
+          type: "done",
+          draft: draftResult ? (draftResult.output as { draft: unknown }).draft : null,
+          memorySaved,
+        });
       } catch (error) {
         console.error("Evorien AI request failed:", error);
         send({ type: "error", message: "Evorien AI couldn't finish responding. Please try again." });

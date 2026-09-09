@@ -1,22 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bot, Send, Square, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Bot, Brain, Send, Square, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { ProjectDraftCard, type AiProjectDraft } from "@/components/ai/project-draft-card";
 
-interface ChatMessage {
+export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   draft?: AiProjectDraft | null;
+  memorySaved?: string | null;
 }
 
 type ChatStreamEvent =
   | { type: "delta"; text: string }
-  | { type: "done"; draft: AiProjectDraft | null }
+  | { type: "done"; draft: AiProjectDraft | null; memorySaved: string | null }
   | { type: "error"; message: string };
 
 const SUGGESTED_PROMPTS = [
@@ -31,9 +34,16 @@ function newId() {
   return typeof crypto.randomUUID === "function" ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 }
 
-export function AiChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
+export function AiChat({
+  initialConversationId,
+  initialMessages = [],
+}: {
+  initialConversationId?: string;
+  initialMessages?: ChatMessage[];
+} = {}) {
+  const router = useRouter();
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [conversationId, setConversationId] = useState<string | undefined>(initialConversationId);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +70,7 @@ export function AiChat() {
     abortRef.current = controller;
     const assistantId = newId();
     let assistantStarted = false;
+    const wasNewConversation = !conversationId;
 
     try {
       const res = await fetch("/api/ai/chat", {
@@ -78,7 +89,12 @@ export function AiChat() {
       const newConversationId = res.headers.get("X-Conversation-Id");
       const remainingHeader = res.headers.get("X-Ai-Remaining");
       const limitHeader = res.headers.get("X-Ai-Limit");
-      if (newConversationId) setConversationId(newConversationId);
+      if (newConversationId) {
+        setConversationId(newConversationId);
+        // A page refresh shouldn't lose the thread — only replace the URL
+        // the first time a brand-new conversation gets its real id.
+        if (wasNewConversation) router.replace(`/ai/${newConversationId}`);
+      }
       if (remainingHeader !== null && limitHeader !== null) {
         setDailyStatus({ remaining: Number(remainingHeader), limit: Number(limitHeader) });
       }
@@ -117,12 +133,15 @@ export function AiChat() {
               );
             }
           } else if (event.type === "done") {
-            const draft = event.draft;
+            const { draft, memorySaved } = event;
             if (!assistantStarted) {
               assistantStarted = true;
-              setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "", draft }]);
+              setMessages((prev) => [
+                ...prev,
+                { id: assistantId, role: "assistant", content: "", draft, memorySaved },
+              ]);
             } else {
-              setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, draft } : m)));
+              setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, draft, memorySaved } : m)));
             }
           } else if (event.type === "error") {
             setError(event.message);
@@ -188,6 +207,15 @@ export function AiChat() {
                   </div>
                 )}
                 {m.draft && <ProjectDraftCard draft={m.draft} />}
+                {m.memorySaved && (
+                  <Link
+                    href="/ai/memory"
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <Brain className="size-3.5 shrink-0" />
+                    Remembered: {m.memorySaved}
+                  </Link>
+                )}
               </div>
             </div>
           ))}
