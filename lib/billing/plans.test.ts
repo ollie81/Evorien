@@ -14,7 +14,7 @@ describe("getPlanLimits", () => {
 describe("planLabel", () => {
   it("labels every plan", () => {
     expect(planLabel("FREE")).toBe("Free");
-    expect(planLabel("PRO")).toBe("Evorien Pro");
+    expect(planLabel("PRO")).toBe("Ollieen Pro");
     expect(planLabel("BUSINESS")).toBe("Business");
   });
 });

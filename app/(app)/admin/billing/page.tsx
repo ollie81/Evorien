@@ -20,7 +20,7 @@ export default async function AdminBillingPage() {
   return (
     <div className="space-y-2">
       <p className="text-sm text-muted-foreground">
-        Manually grant or revoke Evorien Pro. There&apos;s no payment provider wired up yet — this is
+        Manually grant or revoke Ollieen Pro. There&apos;s no payment provider wired up yet — this is
         how early members get Pro until real billing exists.
       </p>
       {members.map((member) => (

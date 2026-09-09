@@ -26,7 +26,7 @@ const REASONS = [
   "Harassment or abuse",
   "Misinformation",
   "Impersonation",
-  "Not related to Evorien",
+  "Not related to Ollieen",
   "Other",
 ];
 

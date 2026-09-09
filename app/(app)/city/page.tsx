@@ -22,22 +22,22 @@ export default function CityVisionPage() {
   return (
     <div className="space-y-6">
       <AskAiBanner
-        title="Explore the Evorien vision"
-        subtitle="Ask Evorien AI what the five pillars mean, what's proposed vs. real today, or what the Charter says."
+        title="Explore the Ollieen vision"
+        subtitle="Ask Ollieen AI what the five pillars mean, what's proposed vs. real today, or what the Charter says."
       />
 
       <div className="space-y-3">
         <h2 className="font-heading text-xl font-semibold">Beyond the network</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Evorien&apos;s long-term vision is to help develop high-autonomy communities — places
+          Ollieen&apos;s long-term vision is to help develop high-autonomy communities — places
           built by the same ambitious builders, artists and founders who make up this network. The
-          physical city is a long-term goal: everything in the Evorien Network is designed to be
+          physical city is a long-term goal: everything in the Ollieen Network is designed to be
           valuable on its own, whether or not a physical community is ever built.
         </p>
       </div>
 
       <DisclaimerBanner>
-        Evorien does not currently control any territory and has no government partnerships unless
+        Ollieen does not currently control any territory and has no government partnerships unless
         explicitly announced. Any future physical development would operate under the laws of its
         host country.
       </DisclaimerBanner>

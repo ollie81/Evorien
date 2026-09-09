@@ -2,7 +2,7 @@ export const SUBSCRIPTION_PLANS = ["FREE", "PRO", "BUSINESS"] as const;
 export type SubscriptionPlan = (typeof SUBSCRIPTION_PLANS)[number];
 
 export interface PlanLimits {
-  /** Max Evorien AI messages per UTC day. See lib/ai/rate-limit.ts. */
+  /** Max Ollieen AI messages per UTC day. See lib/ai/rate-limit.ts. */
   aiDailyMessageLimit: number;
   // Extension point for later phases: add a field here once a second real
   // gated feature is actually built (project analytics, advanced matching,
@@ -26,7 +26,7 @@ export function getPlanLimits(plan: Exclude<SubscriptionPlan, "FREE">): PlanLimi
 export function planLabel(plan: SubscriptionPlan): string {
   switch (plan) {
     case "PRO":
-      return "Evorien Pro";
+      return "Ollieen Pro";
     case "BUSINESS":
       return "Business";
     default:

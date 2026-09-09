@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 /**
- * Evorien is an early, honest platform — most lists will genuinely be
+ * Ollieen is an early, honest platform — most lists will genuinely be
  * empty for a long time. Use this everywhere instead of inventing
  * placeholder content.
  */

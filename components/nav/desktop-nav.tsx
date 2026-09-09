@@ -26,7 +26,7 @@ export function DesktopNav({
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <div className="flex items-center gap-10">
           <Link href="/" className="font-heading text-lg font-semibold tracking-tight">
-            EVORIEN
+            OLLIEEN
           </Link>
           <nav className="flex items-center gap-1">
             {NAV_ITEMS.map(({ href, label, icon: Icon }) => {

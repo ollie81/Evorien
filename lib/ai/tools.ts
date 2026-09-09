@@ -44,17 +44,17 @@ export function buildEvorienAiTools(
   const tools = {
     search_projects: tool({
       description:
-        "Search Evorien's real, active projects. Use this whenever a member asks to find a project, e.g. by topic, pillar, or a skill it needs. Never invent projects — only report what this returns.",
+        "Search Ollieen's real, active projects. Use this whenever a member asks to find a project, e.g. by topic, pillar, or a skill it needs. Never invent projects — only report what this returns.",
       inputSchema: z.object({
         query: z.string().optional().describe("Free-text search over project name, tagline, and what it needs."),
-        pillar: z.enum(PILLAR_CODES).optional().describe("Filter to one Evorien pillar."),
+        pillar: z.enum(PILLAR_CODES).optional().describe("Filter to one Ollieen pillar."),
         skillNeeded: z.string().optional().describe("Only show projects with this skill still listed as needed."),
       }),
       execute: async ({ query, pillar, skillNeeded }) => {
         const supabase = await createClient();
         const skillIds = skillNeeded ? await findSkillId(supabase, skillNeeded) : null;
         if (skillNeeded && !skillIds) {
-          return { found: 0, projects: [], note: `No skill named "${skillNeeded}" exists in Evorien yet.` };
+          return { found: 0, projects: [], note: `No skill named "${skillNeeded}" exists in Ollieen yet.` };
         }
         const projects = await searchProjects({ q: query, pillar, skillIds: skillIds ? [skillIds] : undefined });
         const limited = projects.slice(0, 8);
@@ -74,7 +74,7 @@ export function buildEvorienAiTools(
 
     search_members: tool({
       description:
-        "Search real Evorien members by public profile info — pillar, role interests, or a skill they have. Use this to find potential collaborators. Only ever report members this actually returns; never invent people.",
+        "Search real Ollieen members by public profile info — pillar, role interests, or a skill they have. Use this to find potential collaborators. Only ever report members this actually returns; never invent people.",
       inputSchema: z.object({
         query: z.string().optional().describe("Free-text search over name, username, or country."),
         pillar: z.enum(PILLAR_CODES).optional(),
@@ -84,7 +84,7 @@ export function buildEvorienAiTools(
         const supabase = await createClient();
         const skillId = skill ? await findSkillId(supabase, skill) : null;
         if (skill && !skillId) {
-          return { found: 0, members: [], note: `No skill named "${skill}" exists in Evorien yet.` };
+          return { found: 0, members: [], note: `No skill named "${skill}" exists in Ollieen yet.` };
         }
         const people = await searchPeople({ q: query, pillar, skillIds: skillId ? [skillId] : undefined });
         const limited = people.filter((p) => p.id !== userId).slice(0, 8);
@@ -103,7 +103,7 @@ export function buildEvorienAiTools(
 
     search_skills: tool({
       description:
-        "Look up whether a skill already exists on Evorien and how it's spelled/named canonically. Use this before recommending a skill-based search if you're not sure of the exact name.",
+        "Look up whether a skill already exists on Ollieen and how it's spelled/named canonically. Use this before recommending a skill-based search if you're not sure of the exact name.",
       inputSchema: z.object({
         query: z.string().describe("Partial or full skill name to look up."),
       }),
@@ -116,7 +116,7 @@ export function buildEvorienAiTools(
 
     search_opportunities: tool({
       description:
-        "Search Evorien's real, open opportunities (jobs, freelance, collaboration, events, partnerships, grants, competitions). Never invent opportunities.",
+        "Search Ollieen's real, open opportunities (jobs, freelance, collaboration, events, partnerships, grants, competitions). Never invent opportunities.",
       inputSchema: z.object({
         query: z.string().optional(),
         type: z.enum(OPPORTUNITY_TYPES).optional(),
@@ -145,7 +145,7 @@ export function buildEvorienAiTools(
 
     get_user_context: tool({
       description:
-        "Get the CURRENT member's own real Evorien context — their Passport (roles, pillars, skills, what they're looking for), reputation, and connection count. Use this for any 'what should I do' or personalized question. This can never see another member's data.",
+        "Get the CURRENT member's own real Ollieen context — their Passport (roles, pillars, skills, what they're looking for), reputation, and connection count. Use this for any 'what should I do' or personalized question. This can never see another member's data.",
       inputSchema: z.object({}),
       execute: async () => {
         const supabase = await createClient();
@@ -192,7 +192,7 @@ export function buildEvorienAiTools(
 
     match_contributions: tool({
       description:
-        "Find real, active projects with an unfilled needed skill that matches a skill already on the CURRENT member's own Passport — Evorien's core 'what should I contribute' / 'where can I help' recommendation. Excludes projects the member is already on. Never invents a match; if the member has no skills listed yet, say so and suggest adding some.",
+        "Find real, active projects with an unfilled needed skill that matches a skill already on the CURRENT member's own Passport — Ollieen's core 'what should I contribute' / 'where can I help' recommendation. Excludes projects the member is already on. Never invents a match; if the member has no skills listed yet, say so and suggest adding some.",
       inputSchema: z.object({}),
       execute: async () => {
         const supabase = await createClient();
@@ -233,7 +233,7 @@ export function buildEvorienAiTools(
 
     get_city_information: tool({
       description:
-        "Get Evorien's real City/pillar information: the five pillars, and any real city locations recorded in the database with their actual status. Evorien is not one fixed city — it's a proposed global network. A location's status (RESEARCH, PROPOSED, NEGOTIATION, PLANNING, DEVELOPMENT, OPERATIONAL) tells you how real it currently is; only OPERATIONAL means it's actually running, and even then Evorien does not claim land ownership or sovereignty unless that is explicitly documented — it is not, today.",
+        "Get Ollieen's real City/pillar information: the five pillars, and any real city locations recorded in the database with their actual status. Ollieen is not one fixed city — it's a proposed global network. A location's status (RESEARCH, PROPOSED, NEGOTIATION, PLANNING, DEVELOPMENT, OPERATIONAL) tells you how real it currently is; only OPERATIONAL means it's actually running, and even then Ollieen does not claim land ownership or sovereignty unless that is explicitly documented — it is not, today.",
       inputSchema: z.object({}),
       execute: async () => {
         const cities = await getCities();
@@ -250,7 +250,7 @@ export function buildEvorienAiTools(
     }),
 
     get_charter_information: tool({
-      description: "Get Evorien's real, currently-published Freedom Charter text. Say so if none has been published yet.",
+      description: "Get Ollieen's real, currently-published Freedom Charter text. Say so if none has been published yet.",
       inputSchema: z.object({}),
       execute: async () => {
         const charter = await getCurrentCharter();
@@ -261,7 +261,7 @@ export function buildEvorienAiTools(
 
     get_governance_information: tool({
       description:
-        "Get real Evorien governance proposals members are voting on or have voted on. Never state or imply how anyone should vote — only summarize neutrally.",
+        "Get real Ollieen governance proposals members are voting on or have voted on. Never state or imply how anyone should vote — only summarize neutrally.",
       inputSchema: z.object({
         status: z.enum(["DRAFT", "ACTIVE", "CLOSED", "CANCELLED"]).optional(),
       }),

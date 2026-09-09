@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bot } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
-/** Contextual "Ask Evorien AI" entry point — same card everywhere so it reads as one feature, not a per-page widget. */
+/** Contextual "Ask Ollieen AI" entry point — same card everywhere so it reads as one feature, not a per-page widget. */
 export function AskAiBanner({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <Link href="/ai">

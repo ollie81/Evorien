@@ -36,7 +36,7 @@ export interface NewProjectInput {
 
 /**
  * Shared by createProjectAction (the manual "New project" form) and
- * createProjectFromAiDraftAction (Evorien AI's project builder, after the
+ * createProjectFromAiDraftAction (Ollieen AI's project builder, after the
  * member explicitly confirms) — one insert path, not two, so a change to
  * project-creation logic never has to be made twice.
  */
@@ -108,7 +108,7 @@ export async function createProjectAction(
 
 export type CreateProjectFromDraftState = { error?: string; id?: string } | undefined;
 
-/** Called only from the confirm button on Evorien AI's project-draft card — never by the AI itself. */
+/** Called only from the confirm button on Ollieen AI's project-draft card — never by the AI itself. */
 export async function createProjectFromAiDraftAction(input: NewProjectInput): Promise<CreateProjectFromDraftState> {
   const userId = await requireUserId();
   const result = await insertProject(userId, input);

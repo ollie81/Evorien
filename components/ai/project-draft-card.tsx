@@ -22,7 +22,7 @@ export interface AiProjectDraft {
 }
 
 /**
- * Evorien AI can only ever propose this draft — nothing is written to the
+ * Ollieen AI can only ever propose this draft — nothing is written to the
  * database until a person physically clicks "Create this project" below.
  * The AI itself has no path to trigger this action.
  */

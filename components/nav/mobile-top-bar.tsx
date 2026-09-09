@@ -17,7 +17,7 @@ export function MobileTopBar({
 }) {
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur supports-backdrop-filter:bg-background/80 md:hidden">
-      <span className="font-heading text-base font-semibold tracking-tight">EVORIEN</span>
+      <span className="font-heading text-base font-semibold tracking-tight">OLLIEEN</span>
       <div className="flex items-center gap-1">
         <NotificationBell notifications={notifications} unreadCount={unreadCount} />
         <Button

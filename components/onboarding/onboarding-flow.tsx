@@ -76,7 +76,7 @@ export function OnboardingFlow() {
               Build the future with us.
             </h1>
             <p className="text-muted-foreground">
-              A few quick questions and we&apos;ll generate your Evorien Passport — your identity
+              A few quick questions and we&apos;ll generate your Ollieen Passport — your identity
               across the whole network.
             </p>
           </div>
@@ -121,7 +121,7 @@ export function OnboardingFlow() {
         <div className="space-y-5">
           <div>
             <h2 className="font-heading text-xl font-semibold">
-              Which Evorien pillars interest you?
+              Which Ollieen pillars interest you?
             </h2>
             <p className="text-sm text-muted-foreground">Choose as many as apply.</p>
           </div>

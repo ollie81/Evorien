@@ -39,7 +39,7 @@ export default async function DiscoverPage({
 
       <AskAiBanner
         title="Looking for someone?"
-        subtitle="Describe who or what you need and Evorien AI will search real members and projects."
+        subtitle="Describe who or what you need and Ollieen AI will search real members and projects."
       />
 
       <Suspense>

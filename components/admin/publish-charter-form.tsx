@@ -21,7 +21,7 @@ export function PublishCharterForm() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>
-          <Input id="title" name="title" placeholder="Evorien Freedom Charter" required />
+          <Input id="title" name="title" placeholder="Ollieen Freedom Charter" required />
         </div>
       </div>
       <div className="space-y-2">

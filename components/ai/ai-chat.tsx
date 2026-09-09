@@ -27,7 +27,7 @@ const SUGGESTED_PROMPTS = [
   "Find me a project that needs my skills.",
   "Who could I collaborate with?",
   "Help me turn an idea into a project.",
-  "What is Evorien trying to build?",
+  "What is Ollieen trying to build?",
 ];
 
 function newId() {
@@ -82,7 +82,7 @@ export function AiChat({
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setError(data?.error ?? "Evorien AI couldn't respond just now.");
+        setError(data?.error ?? "Ollieen AI couldn't respond just now.");
         return;
       }
 
@@ -150,10 +150,10 @@ export function AiChat({
       }
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
-        // User stopped generation client-side. Evorien AI keeps generating and
+        // User stopped generation client-side. Ollieen AI keeps generating and
         // saves the full reply server-side, so nothing else to do here.
       } else {
-        setError("Couldn't reach Evorien AI. Check your connection and try again.");
+        setError("Couldn't reach Ollieen AI. Check your connection and try again.");
       }
     } finally {
       abortRef.current = null;
@@ -220,7 +220,7 @@ export function AiChat({
             </div>
           ))}
           {pending && messages[messages.length - 1]?.role === "user" && (
-            <p className="pl-10 text-sm text-muted-foreground">Evorien AI is thinking…</p>
+            <p className="pl-10 text-sm text-muted-foreground">Ollieen AI is thinking…</p>
           )}
           <div ref={bottomRef} />
         </div>
@@ -249,7 +249,7 @@ export function AiChat({
               send(input);
             }
           }}
-          placeholder="Ask Evorien AI anything about the ecosystem…"
+          placeholder="Ask Ollieen AI anything about the ecosystem…"
           rows={2}
           disabled={pending}
           className="flex-1 resize-none"

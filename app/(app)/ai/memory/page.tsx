@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MemoryList, type MemoryGroup } from "@/components/ai/memory-list";
 import { MemoryToggle } from "@/components/ai/memory-toggle";
 
-export const metadata: Metadata = { title: "AI memory · Evorien AI" };
+export const metadata: Metadata = { title: "AI memory · Ollieen AI" };
 
 export default async function AiMemoryPage() {
   const userId = await requireUserId();
@@ -28,7 +28,7 @@ export default async function AiMemoryPage() {
         <div>
           <h1 className="font-heading text-2xl font-semibold tracking-tight">AI memory</h1>
           <p className="text-sm text-muted-foreground">
-            Useful information Evorien AI remembers, separate from your chat history.
+            Useful information Ollieen AI remembers, separate from your chat history.
           </p>
         </div>
         <Link href="/ai" className="text-sm font-medium text-primary underline underline-offset-4">
@@ -41,7 +41,7 @@ export default async function AiMemoryPage() {
           <div>
             <p className="font-medium">Personalized AI memory</p>
             <p className="text-sm text-muted-foreground">
-              When off, Evorien AI won&apos;t save or use any memory about you.
+              When off, Ollieen AI won&apos;t save or use any memory about you.
             </p>
           </div>
           <MemoryToggle enabled={enabled} />
@@ -52,7 +52,7 @@ export default async function AiMemoryPage() {
         <EmptyState
           icon={Brain}
           title="Nothing remembered yet"
-          message="As you chat with Evorien AI, useful long-term facts — goals, interests, projects — will show up here."
+          message="As you chat with Ollieen AI, useful long-term facts — goals, interests, projects — will show up here."
         />
       ) : (
         <MemoryList groups={groups} />

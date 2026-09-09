@@ -86,7 +86,7 @@ export default async function HomePage() {
 
       <AskAiBanner
         title="What should you work on next?"
-        subtitle="Ask Evorien AI to find people, projects and opportunities that match you."
+        subtitle="Ask Ollieen AI to find people, projects and opportunities that match you."
       />
 
       <section className="space-y-3">
@@ -153,7 +153,7 @@ export default async function HomePage() {
           <EmptyState
             icon={Hammer}
             title="No projects yet"
-            message="Be the first to start building something on Evorien."
+            message="Be the first to start building something on Ollieen."
             actionLabel="Create a project"
             actionHref="/build/new"
           />

@@ -88,7 +88,7 @@ export function SignInForm({
           {pending ? "Signing in…" : "Sign in"}
         </Button>
         <p className="text-center text-sm text-muted-foreground">
-          New to Evorien?{" "}
+          New to Ollieen?{" "}
           <Link href="/sign-up" className="font-medium text-foreground underline underline-offset-4">
             Create your Passport
           </Link>

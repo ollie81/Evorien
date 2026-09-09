@@ -5,7 +5,7 @@ import { getConversation, loadConversationMessages } from "@/lib/ai/conversation
 import { AiHeader } from "@/components/ai/ai-header";
 import { AiChat, type ChatMessage } from "@/components/ai/ai-chat";
 
-export const metadata: Metadata = { title: "Evorien AI" };
+export const metadata: Metadata = { title: "Ollieen AI" };
 
 export default async function AiConversationPage({
   params,

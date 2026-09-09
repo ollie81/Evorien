@@ -41,7 +41,7 @@ export default async function WelcomePage({
   return (
     <div className="mx-auto flex max-w-3xl flex-1 flex-col gap-14 px-4 py-16 md:px-6">
       <header className="flex items-center justify-between">
-        <span className="font-heading text-lg font-semibold tracking-tight">EVORIEN</span>
+        <span className="font-heading text-lg font-semibold tracking-tight">OLLIEEN</span>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" render={<Link href="/sign-in">Sign in</Link>} />
           <Button size="sm" render={<Link href="/sign-up">Create your Passport</Link>} />
@@ -50,7 +50,7 @@ export default async function WelcomePage({
 
       {accountDeleted && (
         <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-          Your Evorien account has been deleted.
+          Your Ollieen account has been deleted.
         </p>
       )}
 
@@ -59,7 +59,7 @@ export default async function WelcomePage({
           The digital foundation for a network of high-autonomy communities.
         </h1>
         <p className="max-w-xl text-muted-foreground leading-relaxed">
-          Evorien connects people, skills, projects, contributions, opportunities, reputation,
+          Ollieen connects people, skills, projects, contributions, opportunities, reputation,
           community and governance into one system — so ambitious builders can find each other and
           build real things together, starting today. A future network of physical communities is
           the long-term goal. Everything else is designed to be worth using on its own, right now.
@@ -103,13 +103,13 @@ export default async function WelcomePage({
       <section className="space-y-3">
         <h2 className="font-heading text-xl font-semibold">Today vs. the long-term vision</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Right now, Evorien is a network and a set of tools: a Passport identity, project
+          Right now, Ollieen is a network and a set of tools: a Passport identity, project
           collaboration, a reputation ledger, and community governance. The long-term vision — a
           network of physical, high-autonomy communities — is a future goal the members of this
           network may work toward together, not something being sold or promised today.
         </p>
         <DisclaimerBanner>
-          Evorien does not currently control any territory, has no government partnerships unless
+          Ollieen does not currently control any territory, has no government partnerships unless
           explicitly announced, and is not a citizenship, investment, or crowdfunding offer of any
           kind.
         </DisclaimerBanner>
@@ -118,7 +118,7 @@ export default async function WelcomePage({
       <section className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card px-6 py-10 text-center">
         <p className="font-heading text-lg font-semibold">Ready to build with us?</p>
         <p className="max-w-sm text-sm text-muted-foreground">
-          Create your Evorien Passport, declare what you can contribute, and start finding people
+          Create your Ollieen Passport, declare what you can contribute, and start finding people
           and projects worth your time.
         </p>
         <Button className="mt-2" render={<Link href="/sign-up">Create your Passport</Link>} />

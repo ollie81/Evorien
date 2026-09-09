@@ -2,7 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 
-/** Get-or-create a skill by name (case-insensitive). Shared by profile skills, project skills, and Evorien AI's project builder. */
+/** Get-or-create a skill by name (case-insensitive). Shared by profile skills, project skills, and Ollieen AI's project builder. */
 export async function getOrCreateSkillId(
   supabase: Awaited<ReturnType<typeof createClient>>,
   name: string

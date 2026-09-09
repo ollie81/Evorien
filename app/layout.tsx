@@ -19,16 +19,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_NAME = "Evorien";
+const SITE_NAME = "Ollieen";
 const SITE_DESCRIPTION =
-  "Evorien — the digital foundation for a network of high-autonomy communities.";
+  "Ollieen — the digital foundation for a network of high-autonomy communities.";
 
 export const metadata: Metadata = {
-  // Evorien.com is the intended production identity — set ahead of the
+  // Ollieen.com is the intended production identity — set ahead of the
   // domain actually being connected in Vercel (see README) so every OG/
   // canonical URL this app emits is already correct the moment it is.
   // This only affects <head> metadata resolution, never routing or auth.
-  metadataBase: new URL("https://evorien.com"),
+  metadataBase: new URL("https://ollieen.com"),
   title: {
     default: SITE_NAME,
     template: `%s · ${SITE_NAME}`,

@@ -43,7 +43,7 @@ export default async function BuildPage({
 
       <AskAiBanner
         title="Need help building your project?"
-        subtitle="Ask Evorien AI to structure an idea, find collaborators, or match your skills to what's needed."
+        subtitle="Ask Ollieen AI to structure an idea, find collaborators, or match your skills to what's needed."
       />
 
       <div className="flex gap-1 border-b border-border pb-px">

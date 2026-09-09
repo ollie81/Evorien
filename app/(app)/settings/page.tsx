@@ -29,7 +29,7 @@ export default async function SettingsPage() {
       <Card className="ring-destructive/20">
         <CardHeader>
           <CardTitle className="text-destructive">Danger zone</CardTitle>
-          <CardDescription>Permanently delete your Evorien account.</CardDescription>
+          <CardDescription>Permanently delete your Ollieen account.</CardDescription>
         </CardHeader>
         <CardContent>
           <DeleteAccountButton />

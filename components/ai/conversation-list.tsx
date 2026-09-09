@@ -23,7 +23,7 @@ export function ConversationList({ conversations }: { conversations: Conversatio
             </Button>
           }
           title="Delete all conversations?"
-          description="This permanently deletes every Evorien AI conversation and its messages. This can't be undone."
+          description="This permanently deletes every Ollieen AI conversation and its messages. This can't be undone."
           confirmLabel="Delete all"
           onConfirm={deleteAllConversationsAction}
         />

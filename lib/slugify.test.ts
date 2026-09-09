@@ -3,7 +3,7 @@ import { slugify } from "./slugify";
 
 describe("slugify", () => {
   it("lowercases and hyphenates a normal name", () => {
-    expect(slugify("Evorien Network")).toMatch(/^evorien-network-[a-z0-9]{6}$/);
+    expect(slugify("Ollieen Network")).toMatch(/^ollieen-network-[a-z0-9]{6}$/);
   });
 
   it("strips punctuation", () => {

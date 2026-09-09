@@ -69,7 +69,7 @@ export default async function PassportPage() {
       </Card>
 
       <p className="text-sm text-muted-foreground">
-        The Evorien Passport is a digital membership identity for this network. It is not
+        The Ollieen Passport is a digital membership identity for this network. It is not
         government citizenship, a passport issued by a country, or proof of nationality.
       </p>
 
@@ -97,7 +97,7 @@ export default async function PassportPage() {
 
       <AskAiBanner
         title="How can you strengthen your contribution profile?"
-        subtitle="Ask Evorien AI what to add to your Passport and where your skills are needed."
+        subtitle="Ask Ollieen AI what to add to your Passport and where your skills are needed."
       />
 
       <section className="space-y-3">

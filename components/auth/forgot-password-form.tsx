@@ -20,7 +20,7 @@ export function ForgotPasswordForm({ expiredLink }: { expiredLink?: boolean }) {
         <div>
           <h1 className="font-heading text-xl font-semibold">Check your email</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            If an Evorien account exists for that address, we&apos;ve sent a link to reset your
+            If an Ollieen account exists for that address, we&apos;ve sent a link to reset your
             password.
           </p>
         </div>

@@ -42,7 +42,7 @@ export async function ensureConversation(userId: string, conversationId: string 
     .single();
 
   if (error || !data) {
-    throw new Error("Could not start a new Evorien AI conversation.");
+    throw new Error("Could not start a new Ollieen AI conversation.");
   }
   return data.id as string;
 }

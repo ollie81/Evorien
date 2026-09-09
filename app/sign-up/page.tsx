@@ -12,7 +12,7 @@ export default function SignUpPage() {
             Build the future with us.
           </h1>
           <p className="text-sm text-muted-foreground">
-            Create your Evorien Passport — a digital membership identity for the network. It is
+            Create your Ollieen Passport — a digital membership identity for the network. It is
             not a government ID or citizenship.
           </p>
         </div>

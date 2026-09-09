@@ -54,7 +54,7 @@ export default function CityRoadmapPage() {
     <div className="space-y-6">
       <DisclaimerBanner>
         PROPOSED FUTURE DEVELOPMENT. No location has been selected. This is a framework for how a
-        future Evorien community could grow, not a description of anything currently underway.
+        future Ollieen community could grow, not a description of anything currently underway.
       </DisclaimerBanner>
 
       <div className="space-y-4">

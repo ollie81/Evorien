@@ -26,7 +26,7 @@ export function MemoryList({ groups }: { groups: MemoryGroup[] }) {
             </Button>
           }
           title="Clear all AI memory?"
-          description="This permanently deletes everything Evorien AI remembers about you. Your chat history is not affected. This can't be undone."
+          description="This permanently deletes everything Ollieen AI remembers about you. Your chat history is not affected. This can't be undone."
           confirmLabel="Clear all"
           onConfirm={clearAllMemoryAction}
         />

@@ -25,13 +25,13 @@ function ndjson(event: Record<string, unknown>) {
 export async function POST(request: Request) {
   const userId = await getUserId();
   if (!userId) {
-    return Response.json({ error: "Sign in to use Evorien AI." }, { status: 401 });
+    return Response.json({ error: "Sign in to use Ollieen AI." }, { status: 401 });
   }
 
   const rateLimit = await checkAiRateLimit(userId);
   if (!rateLimit.allowed) {
     return Response.json(
-      { error: `You've reached today's Evorien AI limit (${rateLimit.limit} messages). It resets at midnight UTC.` },
+      { error: `You've reached today's Ollieen AI limit (${rateLimit.limit} messages). It resets at midnight UTC.` },
       { status: 429 }
     );
   }
@@ -55,15 +55,15 @@ export async function POST(request: Request) {
   try {
     model = getAiModel();
   } catch (error) {
-    console.error("Evorien AI is not configured:", error);
-    return Response.json({ error: "Evorien AI isn't configured yet. Try again later." }, { status: 503 });
+    console.error("Ollieen AI is not configured:", error);
+    return Response.json({ error: "Ollieen AI isn't configured yet. Try again later." }, { status: 503 });
   }
 
   let conversationId: string;
   try {
     conversationId = await ensureConversation(userId, requestedConversationId, message);
   } catch (error) {
-    console.error("Evorien AI could not start a conversation:", error);
+    console.error("Ollieen AI could not start a conversation:", error);
     return Response.json({ error: "Could not start a conversation. Please try again." }, { status: 500 });
   }
 
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
     tools: buildEvorienAiTools(userId, conversationId, { memoryEnabled }),
     stopWhen: stepCountIs(MAX_TOOL_STEPS),
     onError: ({ error }) => {
-      console.error("Evorien AI model call failed:", error);
+      console.error("Ollieen AI model call failed:", error);
     },
   });
 
@@ -108,7 +108,7 @@ export async function POST(request: Request) {
           send({ type: "delta", text: delta });
         }
       } catch (error) {
-        console.error("Evorien AI text stream failed:", error);
+        console.error("Ollieen AI text stream failed:", error);
       }
 
       try {
@@ -136,8 +136,8 @@ export async function POST(request: Request) {
           memorySaved,
         });
       } catch (error) {
-        console.error("Evorien AI request failed:", error);
-        send({ type: "error", message: "Evorien AI couldn't finish responding. Please try again." });
+        console.error("Ollieen AI request failed:", error);
+        send({ type: "error", message: "Ollieen AI couldn't finish responding. Please try again." });
       }
 
       try {

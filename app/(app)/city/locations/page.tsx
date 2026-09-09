@@ -14,9 +14,9 @@ export default async function CityLocationsPage() {
   return (
     <div className="space-y-6">
       <DisclaimerBanner>
-        Evorien is location-agnostic and may eventually support multiple communities. A status
+        Ollieen is location-agnostic and may eventually support multiple communities. A status
         below — including &quot;Operational&quot; — describes progress on a proposal, never a
-        claim that Evorien currently owns land or operates a city.
+        claim that Ollieen currently owns land or operates a city.
       </DisclaimerBanner>
       {cities.length === 0 ? (
         <EmptyState icon={MapPin} title="No locations announced yet" message="Nothing is announced today." />
