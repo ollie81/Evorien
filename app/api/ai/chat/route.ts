@@ -1,4 +1,4 @@
-import { generateText, stepCountIs } from "ai";
+import { streamText, stepCountIs } from "ai";
 import { getUserId } from "@/lib/auth";
 import { getAiModel } from "@/lib/ai/model";
 import { EVORIEN_AI_IDENTITY } from "@/lib/ai/identity";
@@ -8,6 +8,18 @@ import { appendMessage, ensureConversation, loadConversationMessages } from "@/l
 
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_TOOL_STEPS = 6;
+
+/**
+ * Each line of the response body is one JSON event: {type:"delta",text} while
+ * the reply streams in, then exactly one {type:"done",draft} or
+ * {type:"error",message} to close it out. Plain NDJSON (not SSE/UI-message
+ * chunks) keeps the client parse trivial and guarantees raw tool JSON can
+ * never leak into the visible message, since the client only ever renders
+ * the `text` field of a `delta` event.
+ */
+function ndjson(event: Record<string, unknown>) {
+  return `${JSON.stringify(event)}\n`;
+}
 
 export async function POST(request: Request) {
   const userId = await getUserId();
@@ -57,36 +69,77 @@ export async function POST(request: Request) {
   const history = await loadConversationMessages(conversationId);
   await appendMessage(conversationId, "user", message);
 
-  try {
-    const result = await generateText({
-      model,
-      instructions: EVORIEN_AI_IDENTITY,
-      messages: [...history, { role: "user" as const, content: message }],
-      tools: buildEvorienAiTools(userId),
-      stopWhen: stepCountIs(MAX_TOOL_STEPS),
-    });
+  const result = streamText({
+    model,
+    instructions: EVORIEN_AI_IDENTITY,
+    messages: [...history, { role: "user" as const, content: message }],
+    tools: buildEvorienAiTools(userId),
+    stopWhen: stepCountIs(MAX_TOOL_STEPS),
+    onError: ({ error }) => {
+      console.error("Evorien AI model call failed:", error);
+    },
+  });
 
-    await appendMessage(conversationId, "assistant", result.text);
+  const encoder = new TextEncoder();
 
-    await recordAiUsage({
-      userId,
-      model: modelName,
-      promptTokens: result.usage?.inputTokens,
-      completionTokens: result.usage?.outputTokens,
-      conversationId,
-    });
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      // Swallows enqueue failures (client disconnected) instead of throwing,
+      // so the loop below keeps draining `textStream` and the model call
+      // still runs to completion server-side — persistence and usage
+      // recording must happen regardless of whether anyone is still reading.
+      const send = (event: Record<string, unknown>) => {
+        try {
+          controller.enqueue(encoder.encode(ndjson(event)));
+        } catch {
+          // client gone; ignored on purpose
+        }
+      };
 
-    const draftResult = result.toolResults.find((r) => r.toolName === "create_project_draft");
+      try {
+        for await (const delta of result.textStream) {
+          send({ type: "delta", text: delta });
+        }
+      } catch (error) {
+        console.error("Evorien AI text stream failed:", error);
+      }
 
-    return Response.json({
-      conversationId,
-      reply: result.text,
-      draft: draftResult ? (draftResult.output as { draft: unknown }).draft : null,
-      remaining: Math.max(0, rateLimit.remaining - 1),
-      limit: rateLimit.limit,
-    });
-  } catch (error) {
-    console.error("Evorien AI request failed:", error);
-    return Response.json({ error: "Evorien AI couldn't respond just now. Please try again." }, { status: 502 });
-  }
+      try {
+        const [text, usage, toolResults] = await Promise.all([result.text, result.usage, result.toolResults]);
+
+        await appendMessage(conversationId, "assistant", text);
+        await recordAiUsage({
+          userId,
+          model: modelName,
+          promptTokens: usage?.inputTokens,
+          completionTokens: usage?.outputTokens,
+          conversationId,
+        });
+
+        const draftResult = toolResults.find((r) => r.toolName === "create_project_draft");
+        send({ type: "done", draft: draftResult ? (draftResult.output as { draft: unknown }).draft : null });
+      } catch (error) {
+        console.error("Evorien AI request failed:", error);
+        send({ type: "error", message: "Evorien AI couldn't finish responding. Please try again." });
+      }
+
+      try {
+        controller.close();
+      } catch {
+        // already closed from the client side
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "X-Content-Type-Options": "nosniff",
+      "Cache-Control": "no-store",
+      "X-Accel-Buffering": "no",
+      "X-Conversation-Id": conversationId,
+      "X-Ai-Remaining": String(Math.max(0, rateLimit.remaining - 1)),
+      "X-Ai-Limit": String(rateLimit.limit),
+    },
+  });
 }

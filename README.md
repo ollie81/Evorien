@@ -146,7 +146,7 @@ this app's existing data, login system and Server Actions; it is not a
 separate app, and it doesn't get its own copy of your data.
 
 **Where this stands right now:** there's a real "Ask Evorien AI" screen
-(linked from Home, or go straight to `/ai`), backed by nine read-only tools
+(linked from Home, or go straight to `/ai`), backed by ten read-only tools
 the model calls to look up real projects, members, skills, opportunities,
 the member's own Passport, City/pillar info, the Charter, and governance
 proposals — never a static description baked into a prompt. It can also
@@ -357,15 +357,21 @@ rate limiting, and a real usage ledger (`ai_usage`, `ai_conversations`,
 `ai_messages`). "Ask Evorien AI" now also appears contextually on Home,
 Build, Discover, Passport, and City's Vision page (`components/ai/ask-ai-
 banner.tsx`), each with copy specific to that page rather than one generic
-prompt reused everywhere. Not yet built: streaming responses — the chat
-waits for a full reply rather than showing tokens as they arrive. That's
-deliberately deferred rather than rushed: this app's tool-calling loop can
-run several server-side steps before it has a final answer, and doing that
-correctly under a real stream (still buffering the full reply to persist
-to `ai_messages`, still surfacing a project draft and the daily-limit
-count once the stream ends) is a genuine rework of the route and the chat
-UI, not a small tweak — worth its own pass rather than a rushed one bolted
-onto this round.
+prompt reused everywhere. Responses stream token-by-token: `/api/ai/chat`
+uses the AI SDK's `streamText` and returns a newline-delimited JSON body
+(`{type:"delta",text}` chunks, then one `{type:"done",draft}` or
+`{type:"error",message}`), which the chat UI reads incrementally and
+renders as the reply grows — plain, self-describing events rather than
+raw SSE/tool-call payloads, so a tool call mid-conversation can never show
+up as broken JSON in the transcript. The route deliberately never ties the
+model call to the client's request signal: if the tab closes or the
+member clicks the stop button that appears while a reply is generating,
+generation keeps running server-side and still persists the full message
+to `ai_messages` and records the usage-ledger row exactly once — dropping
+the connection only stops the member from watching the rest arrive, it
+never loses the reply or lets an interrupted request dodge the daily
+limit. A project draft or the update to the daily-limit count still only
+reaches the client once the reply is fully generated, in that final event.
 
 **Not built yet, by design:**
 - Analytics dashboard beyond the admin overview's live counters.

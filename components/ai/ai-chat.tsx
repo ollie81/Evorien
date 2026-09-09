@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bot, Send, User } from "lucide-react";
+import { Bot, Send, Square, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -14,13 +14,10 @@ interface ChatMessage {
   draft?: AiProjectDraft | null;
 }
 
-interface ChatApiResponse {
-  conversationId: string;
-  reply: string;
-  draft: AiProjectDraft | null;
-  remaining: number;
-  limit: number;
-}
+type ChatStreamEvent =
+  | { type: "delta"; text: string }
+  | { type: "done"; draft: AiProjectDraft | null }
+  | { type: "error"; message: string };
 
 const SUGGESTED_PROMPTS = [
   "What should I work on next?",
@@ -42,10 +39,13 @@ export function AiChat() {
   const [error, setError] = useState<string | null>(null);
   const [dailyStatus, setDailyStatus] = useState<{ remaining: number; limit: number } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -56,31 +56,94 @@ export function AiChat() {
     setMessages((prev) => [...prev, { id: newId(), role: "user", content: trimmed }]);
     setPending(true);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const assistantId = newId();
+    let assistantStarted = false;
+
     try {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId, message: trimmed }),
+        signal: controller.signal,
       });
-      const data = await res.json();
 
       if (!res.ok) {
+        const data = await res.json().catch(() => null);
         setError(data?.error ?? "Evorien AI couldn't respond just now.");
         return;
       }
 
-      const payload = data as ChatApiResponse;
-      setConversationId(payload.conversationId);
-      setDailyStatus({ remaining: payload.remaining, limit: payload.limit });
-      setMessages((prev) => [
-        ...prev,
-        { id: newId(), role: "assistant", content: payload.reply, draft: payload.draft },
-      ]);
-    } catch {
-      setError("Couldn't reach Evorien AI. Check your connection and try again.");
+      const newConversationId = res.headers.get("X-Conversation-Id");
+      const remainingHeader = res.headers.get("X-Ai-Remaining");
+      const limitHeader = res.headers.get("X-Ai-Limit");
+      if (newConversationId) setConversationId(newConversationId);
+      if (remainingHeader !== null && limitHeader !== null) {
+        setDailyStatus({ remaining: Number(remainingHeader), limit: Number(limitHeader) });
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("Streaming isn't supported in this browser.");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line) continue;
+          let event: ChatStreamEvent;
+          try {
+            event = JSON.parse(line) as ChatStreamEvent;
+          } catch {
+            continue;
+          }
+
+          if (event.type === "delta") {
+            const chunk = event.text;
+            if (!assistantStarted) {
+              assistantStarted = true;
+              setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: chunk }]);
+            } else {
+              setMessages((prev) =>
+                prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + chunk } : m))
+              );
+            }
+          } else if (event.type === "done") {
+            const draft = event.draft;
+            if (!assistantStarted) {
+              assistantStarted = true;
+              setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "", draft }]);
+            } else {
+              setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, draft } : m)));
+            }
+          } else if (event.type === "error") {
+            setError(event.message);
+          }
+        }
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        // User stopped generation client-side. Evorien AI keeps generating and
+        // saves the full reply server-side, so nothing else to do here.
+      } else {
+        setError("Couldn't reach Evorien AI. Check your connection and try again.");
+      }
     } finally {
+      abortRef.current = null;
       setPending(false);
     }
+  }
+
+  function stop() {
+    abortRef.current?.abort();
   }
 
   return (
@@ -114,19 +177,23 @@ export function AiChat() {
                 {m.role === "user" ? <User className="size-4" /> : <Bot className="size-4" />}
               </div>
               <div className={cn("max-w-[85%] space-y-2", m.role === "user" && "items-end")}>
-                <div
-                  className={cn(
-                    "whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm",
-                    m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                  )}
-                >
-                  {m.content}
-                </div>
+                {m.content && (
+                  <div
+                    className={cn(
+                      "whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm",
+                      m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                    )}
+                  >
+                    {m.content}
+                  </div>
+                )}
                 {m.draft && <ProjectDraftCard draft={m.draft} />}
               </div>
             </div>
           ))}
-          {pending && <p className="pl-10 text-sm text-muted-foreground">Evorien AI is thinking…</p>}
+          {pending && messages[messages.length - 1]?.role === "user" && (
+            <p className="pl-10 text-sm text-muted-foreground">Evorien AI is thinking…</p>
+          )}
           <div ref={bottomRef} />
         </div>
       )}
@@ -159,9 +226,15 @@ export function AiChat() {
           disabled={pending}
           className="flex-1 resize-none"
         />
-        <Button type="submit" disabled={pending || !input.trim()} size="icon">
-          <Send className="size-4" />
-        </Button>
+        {pending ? (
+          <Button type="button" onClick={stop} size="icon" variant="outline" aria-label="Stop generating">
+            <Square className="size-4" />
+          </Button>
+        ) : (
+          <Button type="submit" disabled={!input.trim()} size="icon" aria-label="Send">
+            <Send className="size-4" />
+          </Button>
+        )}
       </form>
     </div>
   );
