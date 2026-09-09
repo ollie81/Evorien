@@ -354,8 +354,18 @@ structured project draft, which only gets created when the member clicks
 a real confirm button; the model itself has no path to writing to the
 database. Backed by a fixed non-human identity/persona, per-member daily
 rate limiting, and a real usage ledger (`ai_usage`, `ai_conversations`,
-`ai_messages`). Not yet built: contextual "Ask Evorien AI" entry points on
-Build/Discover/Passport/City beyond Home, and streaming responses.
+`ai_messages`). "Ask Evorien AI" now also appears contextually on Home,
+Build, Discover, Passport, and City's Vision page (`components/ai/ask-ai-
+banner.tsx`), each with copy specific to that page rather than one generic
+prompt reused everywhere. Not yet built: streaming responses — the chat
+waits for a full reply rather than showing tokens as they arrive. That's
+deliberately deferred rather than rushed: this app's tool-calling loop can
+run several server-side steps before it has a final answer, and doing that
+correctly under a real stream (still buffering the full reply to persist
+to `ai_messages`, still surfacing a project draft and the daily-limit
+count once the stream ends) is a genuine rework of the route and the chat
+UI, not a small tweak — worth its own pass rather than a rushed one bolted
+onto this round.
 
 **Not built yet, by design:**
 - Analytics dashboard beyond the admin overview's live counters.

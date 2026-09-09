@@ -3,6 +3,7 @@ import { CircleCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionHeader } from "@/components/shared/section-header";
 import { DisclaimerBanner } from "@/components/city/disclaimer-banner";
+import { AskAiBanner } from "@/components/ai/ask-ai-banner";
 
 export const metadata: Metadata = { title: "Vision · The City" };
 
@@ -20,6 +21,11 @@ const PRINCIPLES = [
 export default function CityVisionPage() {
   return (
     <div className="space-y-6">
+      <AskAiBanner
+        title="Explore the Evorien vision"
+        subtitle="Ask Evorien AI what the five pillars mean, what's proposed vs. real today, or what the Charter says."
+      />
+
       <div className="space-y-3">
         <h2 className="font-heading text-xl font-semibold">Beyond the network</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">

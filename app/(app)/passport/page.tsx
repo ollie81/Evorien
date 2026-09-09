@@ -15,6 +15,7 @@ import { SectionHeader } from "@/components/shared/section-header";
 import { StatTile } from "@/components/shared/stat-tile";
 import { EmptyState } from "@/components/shared/empty-state";
 import { RequestVerificationDialog } from "@/components/passport/request-verification-dialog";
+import { AskAiBanner } from "@/components/ai/ask-ai-banner";
 
 export const metadata: Metadata = { title: "Passport" };
 
@@ -93,6 +94,11 @@ export default async function PassportPage() {
       <div>
         <RequestVerificationDialog userId={profile.id} />
       </div>
+
+      <AskAiBanner
+        title="How can you strengthen your contribution profile?"
+        subtitle="Ask Evorien AI what to add to your Passport and where your skills are needed."
+      />
 
       <section className="space-y-3">
         <SectionHeader

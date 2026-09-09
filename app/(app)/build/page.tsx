@@ -20,6 +20,7 @@ import { TabLink } from "@/components/build/tab-link";
 import { LogContributionDialog } from "@/components/build/log-contribution-dialog";
 import { OpportunityCard } from "@/components/build/opportunity-card";
 import { CreateOpportunityDialog } from "@/components/build/create-opportunity-dialog";
+import { AskAiBanner } from "@/components/ai/ask-ai-banner";
 
 export const metadata: Metadata = { title: "Build" };
 
@@ -39,6 +40,11 @@ export default async function BuildPage({
         <h1 className="font-heading text-2xl font-semibold tracking-tight">Build</h1>
         <Button size="sm" render={<Link href="/build/new">New project</Link>} />
       </div>
+
+      <AskAiBanner
+        title="Need help building your project?"
+        subtitle="Ask Evorien AI to structure an idea, find collaborators, or match your skills to what's needed."
+      />
 
       <div className="flex gap-1 border-b border-border pb-px">
         <TabLink href="/build?tab=projects" active={tab === "projects"}>

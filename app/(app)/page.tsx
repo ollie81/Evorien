@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bot, Calendar, Circle, CircleCheck, Hammer, MessageSquare, Sparkles } from "lucide-react";
+import { Calendar, Circle, CircleCheck, Hammer, MessageSquare, Sparkles } from "lucide-react";
 import { requireUserId } from "@/lib/auth";
 import { getMyProfile, getMySkills } from "@/lib/data/profile";
 import { getNetworkStats, getRecentOpportunities, getRecentProjects } from "@/lib/data/home";
@@ -21,6 +21,7 @@ import { PillarBadge } from "@/components/shared/pillar-badge";
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/community/post-card";
 import { LiveActivity } from "@/components/shared/live-activity";
+import { AskAiBanner } from "@/components/ai/ask-ai-banner";
 
 export const metadata: Metadata = { title: "Home" };
 
@@ -83,21 +84,10 @@ export default async function HomePage() {
 
       <LiveActivity initial={live} />
 
-      <Link href="/ai">
-        <Card className="border-primary/30 bg-primary/5 transition-colors hover:bg-primary/10">
-          <CardContent className="flex items-center gap-4">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-              <Bot className="size-5" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium">What should you work on next?</p>
-              <p className="text-sm text-muted-foreground">
-                Ask Evorien AI to find people, projects and opportunities that match you.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
+      <AskAiBanner
+        title="What should you work on next?"
+        subtitle="Ask Evorien AI to find people, projects and opportunities that match you."
+      />
 
       <section className="space-y-3">
         <SectionHeader
