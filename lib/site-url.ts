@@ -5,11 +5,13 @@ import { headers } from "next/headers";
 /**
  * The origin Supabase Auth should redirect back to after email
  * confirmation, password recovery, or Google OAuth. Set NEXT_PUBLIC_SITE_URL
- * in Vercel's environment variables (Production) to https://evorien.vercel.app
- * and it becomes the source of truth — pinned, not inferred, so it can
- * never come out wrong regardless of how a given request reaches Vercel's
- * proxy. Local development has no such variable, so it falls back to
- * whatever the incoming request's own origin/host is (http://localhost:3000).
+ * in Vercel's environment variables (Production) to Evorien's real
+ * deployed URL — https://evorien.com once that domain is connected and
+ * verified (README: "Connecting evorien.com"), https://evorien.vercel.app
+ * until then — and it becomes the source of truth — pinned, not inferred,
+ * so it can never come out wrong regardless of how a given request reaches
+ * Vercel's proxy. Local development has no such variable, so it falls back
+ * to whatever the incoming request's own origin/host is (http://localhost:3000).
  *
  * This only decides what URL Evorien *asks* Supabase to redirect to. It
  * still has to exactly match an entry in Supabase's own Redirect URLs

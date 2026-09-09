@@ -19,13 +19,33 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_NAME = "Evorien";
+const SITE_DESCRIPTION =
+  "Evorien — the digital foundation for a network of high-autonomy communities.";
+
 export const metadata: Metadata = {
+  // Evorien.com is the intended production identity — set ahead of the
+  // domain actually being connected in Vercel (see README) so every OG/
+  // canonical URL this app emits is already correct the moment it is.
+  // This only affects <head> metadata resolution, never routing or auth.
+  metadataBase: new URL("https://evorien.com"),
   title: {
-    default: "Evorien",
-    template: "%s · Evorien",
+    default: SITE_NAME,
+    template: `%s · ${SITE_NAME}`,
   },
-  description:
-    "Evorien — the digital foundation for a network of high-autonomy communities.",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    siteName: SITE_NAME,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

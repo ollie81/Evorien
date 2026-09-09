@@ -204,7 +204,46 @@ you, but you no longer need to write SQL to add it either.
 
 ---
 
-## 7. Add Evorien AI
+## 7. Connect evorien.com
+
+Evorien is fully live at your Vercel-assigned URL from step 6 (e.g.
+`your-app.vercel.app`) — nothing below is required for the site to work.
+This is what to do when you're ready to put `evorien.com` in front of it,
+without breaking the working deployment while you do.
+
+1. In Vercel, open your project -> **Settings -> Domains** -> add
+   `evorien.com` (and `www.evorien.com` if you want both). Vercel shows
+   the exact DNS records to add at your domain registrar.
+2. Add those DNS records, then wait for Vercel to show the domain as
+   **Valid** — this also provisions SSL automatically, and can take
+   anywhere from a few minutes to a few hours depending on DNS
+   propagation.
+3. **Only once `evorien.com` shows Valid in Vercel**, finish the cutover:
+   - Vercel -> **Project Settings -> Environment Variables** -> update
+     `NEXT_PUBLIC_SITE_URL` to `https://evorien.com`, then redeploy.
+   - Supabase -> **Authentication -> URL Configuration** -> change **Site
+     URL** to `https://evorien.com`, and add `https://evorien.com/**` to
+     **Redirect URLs**.
+   - Keep the existing `your-app.vercel.app` entry in Redirect URLs, and
+     don't remove the Vercel-assigned domain itself, until you've
+     confirmed sign-up, sign-in, and Google sign-in all work correctly on
+     `evorien.com` — the old URL keeps working as a fallback the whole
+     time you're verifying the new one.
+4. Optional polish once `evorien.com` is live: add it to the **Authorized
+   domains** on the Google OAuth consent screen (Google Cloud Console).
+   This doesn't affect the OAuth redirect itself — that's Supabase's
+   fixed callback URL, unaffected by your domain — it only affects what
+   Google shows users on the consent screen's fine print.
+
+Every URL this app builds (auth redirects via `NEXT_PUBLIC_SITE_URL`,
+Open Graph/social-sharing metadata via `metadataBase` in `app/layout.tsx`)
+already targets `evorien.com` in code or reads it from that one
+environment variable — there's nothing else to change once the domain
+itself is connected and verified.
+
+---
+
+## 8. Add Evorien AI
 
 Evorien AI is an intelligence layer over everything above — it helps a
 member find people, projects and opportunities that match them, understand
@@ -283,7 +322,7 @@ so the model has no way to ask for someone else's.
 
 ---
 
-## 8. Project structure
+## 9. Project structure
 
 ```
 app/
@@ -338,7 +377,7 @@ the browser — only the public anon key, loaded via `NEXT_PUBLIC_` env vars.
 
 ---
 
-## 9. What's built vs. what's next
+## 10. What's built vs. what's next
 
 **Built:** project scaffold, full database schema with Row Level Security
 on every table, a complete authentication lifecycle (email/password and
@@ -415,7 +454,7 @@ test project (never the founding members' live database) which hasn't been
 provisioned, so every Server Action and RLS policy is still verified by
 hand against the real schema rather than by an automated suite.
 
-**Evorien AI:** an ongoing, staged build (see section 7 above) — a real
+**Evorien AI:** an ongoing, staged build (see section 8 above) — a real
 "Ask Evorien AI" chat (linked from Home, at `/ai`) grounded in ten
 server-side tools that query this app's actual projects, members, skills,
 opportunities, the caller's own Passport, City/pillar info, the Charter,
@@ -501,7 +540,7 @@ not guessed at ahead of time).
 
 ---
 
-## 10. Everyday commands
+## 11. Everyday commands
 
 ```bash
 npm run dev     # local development server, http://localhost:3000

@@ -13,9 +13,13 @@ export const config = {
      * Match all request paths except for the ones starting with:
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
+     * - favicon.ico, sitemap.xml, robots.txt, manifest.webmanifest,
+     *   opengraph-image (metadata files/routes — fetched by browsers,
+     *   link-preview scrapers, and "add to home screen" flows with no
+     *   session at all, so gating them behind auth breaks their purpose
+     *   rather than protecting anything)
      * - files with an extension (images, fonts, etc.)
      */
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|manifest.webmanifest|opengraph-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
