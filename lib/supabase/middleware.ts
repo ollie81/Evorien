@@ -4,7 +4,10 @@ import { NextResponse, type NextRequest } from "next/server";
 // Reachable without a session. A signed-out visit to anything else lands on
 // /welcome — the vision pitch — rather than a bare sign-in form with no
 // context; a signed-in visit to any of these bounces to the dashboard.
-const PUBLIC_PAGES = ["/sign-in", "/sign-up", "/welcome"];
+// /reset-password is deliberately NOT here: it's only ever reached with a
+// real (recovery) session from /auth/callback, so it must not bounce a
+// signed-in visitor away — the page itself checks for a session instead.
+const PUBLIC_PAGES = ["/sign-in", "/sign-up", "/welcome", "/forgot-password"];
 
 /**
  * Optimistic auth check, run on every request by proxy.ts. It only reads
@@ -47,7 +50,21 @@ export async function updateSession(request: NextRequest) {
   // for signed-out/unauthorized requests — see e.g. app/api/ai/chat/route.ts.
   // Redirecting them to a page here, before they even run, would turn a
   // fetch() call expecting JSON into an HTML redirect response instead.
-  if (pathname.startsWith("/api/")) {
+  //
+  // /auth/callback is exempted the same way: a person clicking an email
+  // confirmation, password recovery, or Google OAuth link is by definition
+  // not signed in yet, so the generic "no claims -> /welcome" bounce below
+  // would otherwise fire before the route's own code-exchange logic ever
+  // runs, silently discarding the code. The route handles every outcome
+  // (success, error, missing code) itself and issues its own redirect.
+  //
+  // /reset-password needs the same exemption for the opposite reason: it
+  // can't go in PUBLIC_PAGES (that would bounce away the signed-in
+  // recovery session it's meant for), but that also means a signed-out
+  // visitor with no session at all would otherwise hit the generic
+  // "no claims -> /welcome" bounce below before the page's own, more
+  // specific "no session -> /forgot-password" check ever got to run.
+  if (pathname.startsWith("/api/") || pathname === "/auth/callback" || pathname === "/reset-password") {
     return supabaseResponse;
   }
 

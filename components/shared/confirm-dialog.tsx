@@ -14,10 +14,11 @@ import {
 import { Button } from "@/components/ui/button";
 
 /**
- * The only confirmation step anywhere in this app — reserved for bulk,
- * irreversible actions (delete all conversations, clear all memory) where
- * a single misclick would destroy everything at once. Single-item deletes
- * elsewhere fire immediately, matching the rest of the codebase.
+ * The only confirmation step anywhere in this app — reserved for bulk or
+ * otherwise severe, irreversible actions (delete all conversations, clear
+ * all memory, delete your account) where a single misclick would destroy
+ * significant data at once. Single-item deletes elsewhere fire
+ * immediately, matching the rest of the codebase.
  */
 export function ConfirmDialog({
   trigger,

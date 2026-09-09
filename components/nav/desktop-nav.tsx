@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, ShieldCheck } from "lucide-react";
+import { LogOut, Settings, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "@/actions/auth";
 import type { Notification } from "@/lib/data/notifications";
@@ -63,6 +63,16 @@ export function DesktopNav({
             />
           )}
           <NotificationBell notifications={notifications} unreadCount={unreadCount} />
+          <Button
+            variant="ghost"
+            size="sm"
+            render={
+              <Link href="/settings">
+                <Settings className="size-4" />
+                Settings
+              </Link>
+            }
+          />
           <form action={signOutAction}>
             <Button variant="ghost" size="sm" type="submit">
               <LogOut className="size-4" />

@@ -30,8 +30,13 @@ const SYSTEM = [
   { icon: Landmark, label: "Future cities", detail: "The long-term destination — not the starting point." },
 ];
 
-export default async function WelcomePage() {
-  const stats = await getNetworkStats();
+export default async function WelcomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const [stats, params] = await Promise.all([getNetworkStats(), searchParams]);
+  const accountDeleted = params.accountDeleted === "1";
 
   return (
     <div className="mx-auto flex max-w-3xl flex-1 flex-col gap-14 px-4 py-16 md:px-6">
@@ -42,6 +47,12 @@ export default async function WelcomePage() {
           <Button size="sm" render={<Link href="/sign-up">Create your Passport</Link>} />
         </div>
       </header>
+
+      {accountDeleted && (
+        <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+          Your Evorien account has been deleted.
+        </p>
+      )}
 
       <section className="space-y-5">
         <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">

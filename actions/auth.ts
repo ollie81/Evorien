@@ -82,3 +82,105 @@ export async function signOutAction() {
   await supabase.auth.signOut();
   redirect("/sign-in");
 }
+
+/**
+ * Server-side signInWithOAuth returns a URL instead of auto-redirecting
+ * (that only happens in a browser context) — Supabase's own documented
+ * Next.js App Router pattern is to hand that URL to next/navigation's
+ * redirect() from a Server Action, same shape as every other auth action
+ * in this file.
+ */
+export async function signInWithGoogleAction() {
+  const headerList = await headers();
+  const origin = headerList.get("origin") ?? `https://${headerList.get("host")}`;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${origin}/auth/callback` },
+  });
+
+  if (error || !data.url) {
+    redirect("/sign-in?authError=oauth_start_failed");
+  }
+
+  redirect(data.url);
+}
+
+export type ForgotPasswordFormState = { error?: string; success?: boolean } | undefined;
+
+export async function forgotPasswordAction(
+  _prevState: ForgotPasswordFormState,
+  formData: FormData
+): Promise<ForgotPasswordFormState> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) {
+    return { error: "Enter your email address." };
+  }
+
+  const headerList = await headers();
+  const origin = headerList.get("origin") ?? `https://${headerList.get("host")}`;
+
+  const supabase = await createClient();
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
+  });
+
+  // Always the same response whether or not this email has an account —
+  // revealing that would let someone enumerate registered addresses.
+  return { success: true };
+}
+
+export async function resetPasswordAction(
+  _prevState: AuthFormState,
+  formData: FormData
+): Promise<AuthFormState> {
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (!password || password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+  if (password !== confirmPassword) {
+    return { error: "Passwords do not match." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    return { error: "Could not update your password. Please request a new reset link." };
+  }
+
+  // The recovery link left the browser with a real (if short-lived in
+  // practice) session — sign out so the member logs in fresh with their
+  // new password, matching the flow they'd expect.
+  await supabase.auth.signOut();
+  redirect("/sign-in?passwordReset=1");
+}
+
+export type ResendConfirmationFormState = { error?: string; success?: boolean } | undefined;
+
+export async function resendConfirmationAction(
+  _prevState: ResendConfirmationFormState,
+  formData: FormData
+): Promise<ResendConfirmationFormState> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) {
+    return { error: "Missing email address." };
+  }
+
+  const headerList = await headers();
+  const origin = headerList.get("origin") ?? `https://${headerList.get("host")}`;
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: { emailRedirectTo: `${origin}/auth/callback` },
+  });
+
+  if (error) {
+    return { error: "Could not resend confirmation email. Please try again shortly." };
+  }
+  return { success: true };
+}

@@ -65,6 +65,48 @@ system. Nothing here contains real user data — it's just structure.
    anywhere. That key bypasses every security rule and must only ever be
    used from a trusted server, never shipped to a browser.
 
+### Configure authentication (Site URL, Redirect URLs, Google sign-in)
+
+Evorien uses Supabase Auth directly for everything — email/password and
+Google sign-in, email confirmation, password reset — there's no separate
+auth system. Email/password works immediately once the migrations above
+have run; two things below need a one-time setup in the dashboard, and
+skipping them is exactly what causes an email confirmation or Google
+sign-in link to land on an error page instead of back on Evorien.
+
+**Site URL and Redirect URLs** (required for email confirmation links,
+password reset links, and Google sign-in to return to Evorien correctly —
+this is not optional, and it's needed for local development too, not just
+production):
+
+1. In your Supabase project, open **Authentication -> URL Configuration**.
+2. Set **Site URL** to your production URL (e.g. `https://your-app.vercel.app`).
+3. Under **Redirect URLs**, add both of these — the app already builds the
+   exact right redirect for whichever one it's running on, it just needs
+   both allow-listed here:
+   - `http://localhost:3000/**` (local development)
+   - `https://your-app.vercel.app/**` (production — use your real Vercel URL)
+
+**Google sign-in** (optional — every other auth feature works without it):
+
+1. In [Google Cloud Console](https://console.cloud.google.com), create (or
+   pick) a project, then **APIs & Services -> Credentials -> Create
+   Credentials -> OAuth client ID**, type **Web application**. Configure
+   the OAuth consent screen first if prompted (External is fine).
+2. Under **Authorized redirect URIs**, add your Supabase project's own
+   callback URL: `https://<your-project-ref>.supabase.co/auth/v1/callback`
+   (find `<your-project-ref>` in your Project URL from the step above).
+   This is **one fixed value** — the same one for local development and
+   production, since the OAuth exchange always round-trips through
+   Supabase first regardless of where Evorien itself is running.
+3. Copy the **Client ID** and **Client secret** Google gives you.
+4. In Supabase, open **Authentication -> Providers -> Google**, enable it,
+   and paste in the Client ID and Client secret. The secret only ever
+   lives here — it never goes into this app's environment variables,
+   codebase, or anywhere a browser can see it.
+5. Reload the app. "Continue with Google" on the sign-in/sign-up pages now
+   works in both development and production.
+
 ---
 
 ## 3. Configure the app locally
@@ -131,9 +173,11 @@ you, but you no longer need to write SQL to add it either.
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 4. Click **Deploy**. Once it finishes, Vercel gives you a live URL.
-5. In Supabase, open **Authentication -> URL Configuration** and add your
-   Vercel URL (and `https://your-domain/auth/callback`) to the allowed
-   redirect URLs, so email confirmation links work in production.
+5. Make sure that URL is in Supabase's Redirect URLs allow list — see
+   **Configure authentication** under step 2 above. This is the single
+   most common cause of "email confirmation link shows an error instead of
+   returning to Evorien": the allow list only had one of dev/production,
+   or was missing the `/**` wildcard.
 
 ---
 
@@ -274,7 +318,14 @@ the browser — only the public anon key, loaded via `NEXT_PUBLIC_` env vars.
 ## 9. What's built vs. what's next
 
 **Built:** project scaffold, full database schema with Row Level Security
-on every table, authentication, the full navigation (desktop top nav,
+on every table, a complete authentication lifecycle (email/password and
+Google sign-in sharing one callback route, email confirmation with resend,
+forgot/reset password, change password, session persistence and
+expiration, an account settings page, and self-service account deletion —
+via a security-definer Postgres function scoped to the caller's own row
+rather than a service-role key — that preserves shared projects/posts/
+organizations for other members instead of cascading them away), the full
+navigation (desktop top nav,
 mobile bottom tabs + top bar), onboarding into a real Passport, a Home
 dashboard that's a guided first-session checklist until a member has
 declared a skill, connected with someone, joined a project and logged a
