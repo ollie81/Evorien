@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { Compass, Hammer } from "lucide-react";
+import { Compass, Hammer, Sparkles } from "lucide-react";
 import { searchPeople, searchProjects } from "@/lib/data/discover";
+import { findPotentialCollaborators } from "@/lib/data/matching";
 import { connectionState, getMyConnectionsByOtherId } from "@/lib/data/connections";
 import { getLiveActivity } from "@/lib/data/presence";
 import { getMySkillIds } from "@/lib/data/profile";
 import { getUserId, requireUserId } from "@/lib/auth";
-import { profileDisplayName } from "@/lib/types";
-import { roleLabel } from "@/lib/constants/roles";
 import { DiscoverControls } from "@/components/discover/discover-controls";
-import { ConnectButton } from "@/components/discover/connect-button";
+import { MemberCard } from "@/components/discover/member-card";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PillarBadge } from "@/components/shared/pillar-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LiveActivity } from "@/components/shared/live-activity";
@@ -26,7 +24,7 @@ export default async function DiscoverPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const params = await searchParams;
-  const tab = params.tab === "projects" ? "projects" : "people";
+  const tab = params.tab === "projects" ? "projects" : params.tab === "matches" ? "matches" : "people";
   const q = typeof params.q === "string" ? params.q : undefined;
   const pillar = typeof params.pillar === "string" ? params.pillar : undefined;
   const mySkillsOnly = params.mySkills === "1";
@@ -50,6 +48,8 @@ export default async function DiscoverPage({
 
       {tab === "people" ? (
         <PeopleResults q={q} pillar={pillar} />
+      ) : tab === "matches" ? (
+        <MatchResults pillar={pillar} />
       ) : (
         <ProjectResults q={q} pillar={pillar} mySkillsOnly={mySkillsOnly} />
       )}
@@ -72,46 +72,55 @@ async function PeopleResults({ q, pillar }: { q?: string; pillar?: string }) {
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      {people.map((person) => {
-        const name = profileDisplayName(person);
-        return (
-          <Card key={person.id}>
-            <CardContent className="flex items-start gap-3">
-              <Avatar>
-                <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="truncate font-medium">{name}</p>
-                  {person.id !== viewerId && (
-                    <ConnectButton
-                      profileId={person.id}
-                      initialState={connectionState(viewerId, connections.get(person.id))}
-                    />
-                  )}
-                </div>
-                {person.roles.length > 0 && (
-                  <p className="truncate text-sm text-muted-foreground">
-                    {person.roles.map(roleLabel).join(" · ")}
-                  </p>
-                )}
-                {person.pillars.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {person.pillars.map((code) => (
-                      <PillarBadge key={code} code={code} dense />
-                    ))}
-                  </div>
-                )}
-                {person.looking_for && (
-                  <p className="line-clamp-2 text-sm text-muted-foreground">
-                    Looking for: {person.looking_for}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+      {people.map((person) => (
+        <MemberCard
+          key={person.id}
+          profile={person}
+          viewerId={viewerId}
+          connectionState={connectionState(viewerId, connections.get(person.id))}
+        />
+      ))}
+    </div>
+  );
+}
+
+async function MatchResults({ pillar }: { pillar?: string }) {
+  const viewerId = await requireUserId();
+  const outcome = await findPotentialCollaborators({ pillar });
+
+  if (outcome.status === "insufficient_profile") {
+    return (
+      <EmptyState
+        icon={Sparkles}
+        title="Tell us a bit more about you"
+        message="Add a few skills or say what you're looking for on your Passport, and we'll start suggesting people worth connecting with."
+        actionLabel="Edit Passport"
+        actionHref="/passport/edit"
+      />
+    );
+  }
+
+  if (outcome.status === "no_matches") {
+    return (
+      <EmptyState
+        icon={Sparkles}
+        title="No strong match found right now"
+        message="As more members join and add skills, better suggestions will show up here. Try browsing People in the meantime."
+      />
+    );
+  }
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {outcome.collaborators.map((collaborator) => (
+        <MemberCard
+          key={collaborator.profile.id}
+          profile={collaborator.profile}
+          viewerId={viewerId}
+          connectionState={collaborator.connectionState}
+          reasons={collaborator.reasons}
+        />
+      ))}
     </div>
   );
 }

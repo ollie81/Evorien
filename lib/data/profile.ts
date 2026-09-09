@@ -15,6 +15,24 @@ export const getMyProfile = cache(async (): Promise<Profile | null> => {
   return data as Profile | null;
 });
 
+/**
+ * Any member's Passport by id — for viewing someone else's (e.g. from
+ * Discover or a match). RLS already allows any authenticated member to
+ * read any onboarded profile's public fields; this just adds the
+ * onboarding-completed gate a lookup-by-id needs that getMyProfile
+ * doesn't (self always has an in-progress row to show, others don't).
+ */
+export async function getProfileById(profileId: string): Promise<Profile | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", profileId)
+    .eq("onboarding_completed", true)
+    .maybeSingle();
+  return data as Profile | null;
+}
+
 export async function getReputationScore(profileId: string): Promise<number> {
   const supabase = await createClient();
   const { data } = await supabase

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Chip } from "@/components/shared/chip";
 
-export function DiscoverControls({ activeTab }: { activeTab: "people" | "projects" }) {
+export function DiscoverControls({ activeTab }: { activeTab: "people" | "matches" | "projects" }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -38,6 +38,7 @@ export function DiscoverControls({ activeTab }: { activeTab: "people" | "project
       <Tabs value={activeTab} onValueChange={(tab) => updateParams({ tab })}>
         <TabsList>
           <TabsTrigger value="people">People</TabsTrigger>
+          <TabsTrigger value="matches">For You</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
         </TabsList>
       </Tabs>
