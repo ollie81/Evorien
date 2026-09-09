@@ -126,3 +126,31 @@ export async function getUnverifiedSkillCount(): Promise<number> {
     .eq("is_verified", false);
   return count ?? 0;
 }
+
+export interface AdminMemberPlan {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  passport_id: string;
+  plan: string; // "FREE" when no active subscriptions row exists
+}
+
+export async function getMembersWithPlans(): Promise<AdminMemberPlan[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, full_name, username, passport_id, subscriptions(plan, status)")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  return (data ?? []).map((row) => {
+    const subscription = (row.subscriptions as unknown as { plan: string; status: string }[])[0];
+    return {
+      id: row.id as string,
+      full_name: row.full_name as string | null,
+      username: row.username as string | null,
+      passport_id: row.passport_id as string,
+      plan: subscription?.status === "ACTIVE" ? subscription.plan : "FREE",
+    };
+  });
+}

@@ -373,11 +373,34 @@ never loses the reply or lets an interrupted request dodge the daily
 limit. A project draft or the update to the daily-limit count still only
 reaches the client once the reply is fully generated, in that final event.
 
+**Monetization foundation:** the guiding rule is "don't charge people for
+belonging, charge for additional value" — free membership (Passport,
+discovery, joining/creating projects, community, a reasonable amount of
+Evorien AI, governance) stays free forever, with no feature ever taken
+away from it. What exists so far is the plumbing, not a payment system:
+`subscriptions` (`plan` FREE/PRO/BUSINESS, scoped to either a member or,
+schema-only for now, an organization) plus `lib/billing/` — `plans.ts`
+(pure plan/limit definitions) and `entitlements.ts` (`getMyPlan`,
+fail-closed to FREE on any error so a lookup hiccup can never hand out
+paid access). The one real, working example: Evorien AI's daily message
+limit is now plan-aware (`lib/ai/rate-limit.ts`) — FREE members keep
+today's env-configurable limit unchanged, Pro/Business get a higher one.
+Since there's no payment provider yet, an admin grants or revokes Pro by
+hand from `/admin/billing` — the only way anyone is on Pro today, and
+exactly how early paying/comped members would be handled before real
+billing exists. Deliberately not built: any actual payment integration,
+a member-facing upgrade/checkout flow, organization/business billing UI,
+and a generic capability-gating function (there's only one gated feature
+so far — that's added once there's a second real one to generalize from,
+not guessed at ahead of time).
+
 **Not built yet, by design:**
 - Analytics dashboard beyond the admin overview's live counters.
-- Payments / premium subscriptions (Phase G) — deliberately not built into
-  V1 per the product principles: no fundraising, no token, no investment
-  claims.
+- Real payment processing (Phase G) — deliberately not built into V1 per
+  the product principles: no fundraising, no token, no investment claims,
+  and revenue is meant to follow real members and real collaboration, not
+  precede them. See "Monetization foundation" above for what already
+  exists ahead of an actual payment provider.
 
 ---
 

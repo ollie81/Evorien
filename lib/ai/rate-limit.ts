@@ -1,10 +1,13 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { getMyPlan } from "@/lib/billing/entitlements";
+import { getPlanLimits } from "@/lib/billing/plans";
 
 const DEFAULT_DAILY_LIMIT = 30;
 
-function dailyLimit() {
+/** FREE's limit stays env-configurable, exactly as before plans existed. */
+function freeDailyLimit() {
   const configured = Number(process.env.AI_DAILY_MESSAGE_LIMIT);
   return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_DAILY_LIMIT;
 }
@@ -16,9 +19,10 @@ export interface AiRateLimitStatus {
   limit: number;
 }
 
-/** Counts today's (UTC) ai_usage rows for this member against the configured daily limit. */
+/** Counts today's (UTC) ai_usage rows for this member against their plan's daily limit. */
 export async function checkAiRateLimit(userId: string): Promise<AiRateLimitStatus> {
-  const limit = dailyLimit();
+  const plan = await getMyPlan(userId);
+  const limit = plan === "FREE" ? freeDailyLimit() : getPlanLimits(plan).aiDailyMessageLimit;
   const startOfDayUtc = new Date();
   startOfDayUtc.setUTCHours(0, 0, 0, 0);
 
