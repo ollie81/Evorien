@@ -101,9 +101,11 @@ production):
    needs both allow-listed here:
    - `http://localhost:3000/**` (local development)
    - `https://your-app.vercel.app/**` (production — use your real Vercel URL)
-4. In Vercel, also set `NEXT_PUBLIC_SITE_URL` (Project Settings ->
-   Environment Variables, Production) to your real deployed URL — see
-   `.env.example`. The app can work out its own origin from request
+4. In Vercel, also set `SITE_URL` (Project Settings -> Environment
+   Variables, Production) to your real deployed URL — see `.env.example`.
+   Deliberately not `NEXT_PUBLIC_`-prefixed: it's only ever read
+   server-side, and Vercel now blocks saving a `NEXT_PUBLIC_`-prefixed
+   variable at all. The app can work out its own origin from request
    headers without it, but pinning it removes any ambiguity in
    production, and it's what every auth Server Action in `actions/auth.ts`
    (`lib/site-url.ts`) prefers when present.
@@ -193,9 +195,10 @@ you, but you no longer need to write SQL to add it either.
    and add:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `NEXT_PUBLIC_SITE_URL` — set this to your real Vercel URL once you
-     know it (e.g. `https://your-app.vercel.app`). You can add it after
-     the first deploy once Vercel's given you the URL; redeploy afterward.
+   - `SITE_URL` — set this to your real Vercel URL once you know it
+     (e.g. `https://your-app.vercel.app`). No `NEXT_PUBLIC_` prefix — see
+     `.env.example` for why. You can add it after the first deploy once
+     Vercel's given you the URL; redeploy afterward.
 4. Click **Deploy**. Once it finishes, Vercel gives you a live URL.
 5. Make sure that same URL is in **both** places in Supabase — see
    **Configure authentication** under step 2 above:
@@ -231,8 +234,9 @@ without breaking the working deployment while you do.
    anywhere from a few minutes to a few hours depending on DNS
    propagation.
 3. **Only once `ollieen.com` shows Valid in Vercel**, finish the cutover:
-   - Vercel -> **Project Settings -> Environment Variables** -> update
-     `NEXT_PUBLIC_SITE_URL` to `https://ollieen.com`, then redeploy.
+   - Vercel -> **Project Settings -> Environment Variables** -> set
+     `SITE_URL` (no `NEXT_PUBLIC_` prefix — see `.env.example`) to
+     `https://ollieen.com`, then redeploy.
    - Supabase -> **Authentication -> URL Configuration** -> change **Site
      URL** to `https://ollieen.com`, and add `https://ollieen.com/**` to
      **Redirect URLs**.
@@ -247,7 +251,7 @@ without breaking the working deployment while you do.
    fixed callback URL, unaffected by your domain — it only affects what
    Google shows users on the consent screen's fine print.
 
-Every URL this app builds (auth redirects via `NEXT_PUBLIC_SITE_URL`,
+Every URL this app builds (auth redirects via `SITE_URL`,
 Open Graph/social-sharing metadata via `metadataBase` in `app/layout.tsx`)
 already targets `ollieen.com` in code or reads it from that one
 environment variable — there's nothing else to change once the domain
