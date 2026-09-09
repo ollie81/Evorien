@@ -1,8 +1,8 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSiteOrigin } from "@/lib/site-url";
 
 export type AuthFormState = { error?: string } | undefined;
 
@@ -51,8 +51,7 @@ export async function signUpAction(
     return { error: "Password must be at least 8 characters." };
   }
 
-  const headerList = await headers();
-  const origin = headerList.get("origin") ?? `https://${headerList.get("host")}`;
+  const origin = await getSiteOrigin();
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
@@ -91,8 +90,7 @@ export async function signOutAction() {
  * in this file.
  */
 export async function signInWithGoogleAction() {
-  const headerList = await headers();
-  const origin = headerList.get("origin") ?? `https://${headerList.get("host")}`;
+  const origin = await getSiteOrigin();
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -118,8 +116,7 @@ export async function forgotPasswordAction(
     return { error: "Enter your email address." };
   }
 
-  const headerList = await headers();
-  const origin = headerList.get("origin") ?? `https://${headerList.get("host")}`;
+  const origin = await getSiteOrigin();
 
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(email, {
@@ -169,8 +166,7 @@ export async function resendConfirmationAction(
     return { error: "Missing email address." };
   }
 
-  const headerList = await headers();
-  const origin = headerList.get("origin") ?? `https://${headerList.get("host")}`;
+  const origin = await getSiteOrigin();
 
   const supabase = await createClient();
   const { error } = await supabase.auth.resend({

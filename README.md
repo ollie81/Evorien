@@ -80,12 +80,26 @@ this is not optional, and it's needed for local development too, not just
 production):
 
 1. In your Supabase project, open **Authentication -> URL Configuration**.
-2. Set **Site URL** to your production URL (e.g. `https://your-app.vercel.app`).
-3. Under **Redirect URLs**, add both of these — the app already builds the
-   exact right redirect for whichever one it's running on, it just needs
-   both allow-listed here:
+2. Set **Site URL** to your production URL (e.g. `https://your-app.vercel.app`)
+   — **not** `http://localhost:3000`, which is what a brand-new Supabase
+   project defaults to. This field matters more than it looks: Supabase
+   silently redirects here, with no error, any time the specific redirect
+   URL a sign-in/sign-up/reset request asked for doesn't exactly match an
+   entry in Redirect URLs below. If Site URL is still the default and a
+   Redirect URLs entry has so much as a typo, every auth link will
+   silently land on `localhost` in production instead of erroring —
+   this is the actual mechanism behind that symptom if you ever see it.
+3. Under **Redirect URLs**, add both of these exactly — the app already
+   builds the right redirect for whichever one it's running on, it just
+   needs both allow-listed here:
    - `http://localhost:3000/**` (local development)
    - `https://your-app.vercel.app/**` (production — use your real Vercel URL)
+4. In Vercel, also set `NEXT_PUBLIC_SITE_URL` (Project Settings ->
+   Environment Variables, Production) to your real deployed URL — see
+   `.env.example`. The app can work out its own origin from request
+   headers without it, but pinning it removes any ambiguity in
+   production, and it's what every auth Server Action in `actions/auth.ts`
+   (`lib/site-url.ts`) prefers when present.
 
 **Google sign-in** (optional — every other auth feature works without it):
 
@@ -169,15 +183,24 @@ you, but you no longer need to write SQL to add it either.
    auto-detects Next.js — you don't need to change any build settings.
 3. Before the first deploy, open **Environment Variables** in the import
    screen (or later under **Project Settings -> Environment Variables**)
-   and add the same two values from your `.env.local`:
+   and add:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SITE_URL` — set this to your real Vercel URL once you
+     know it (e.g. `https://your-app.vercel.app`). You can add it after
+     the first deploy once Vercel's given you the URL; redeploy afterward.
 4. Click **Deploy**. Once it finishes, Vercel gives you a live URL.
-5. Make sure that URL is in Supabase's Redirect URLs allow list — see
-   **Configure authentication** under step 2 above. This is the single
-   most common cause of "email confirmation link shows an error instead of
-   returning to Evorien": the allow list only had one of dev/production,
-   or was missing the `/**` wildcard.
+5. Make sure that same URL is in **both** places in Supabase — see
+   **Configure authentication** under step 2 above:
+   - **Site URL**, not left as its `localhost` default.
+   - **Redirect URLs**, with the `/**` wildcard.
+
+   This is the single most common cause of an email confirmation or Google
+   sign-in link redirecting to an error page, or silently back to
+   `localhost`, instead of returning to Evorien: Supabase falls back to
+   Site URL, with no error, whenever the requested redirect doesn't
+   exactly match a Redirect URLs entry — so a stale Site URL and an
+   almost-right allow list combine into exactly that symptom.
 
 ---
 
