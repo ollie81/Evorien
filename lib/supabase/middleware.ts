@@ -64,7 +64,21 @@ export async function updateSession(request: NextRequest) {
   // visitor with no session at all would otherwise hit the generic
   // "no claims -> /welcome" bounce below before the page's own, more
   // specific "no session -> /forgot-password" check ever got to run.
-  if (pathname.startsWith("/api/") || pathname === "/auth/callback" || pathname === "/reset-password") {
+  //
+  // /about, /privacy and /terms need a third kind of exemption: they must
+  // render identically for anonymous crawlers, signed-out visitors, and
+  // signed-in members alike, with no bounce in either direction. Putting
+  // them in PUBLIC_PAGES would work for signed-out visitors but would
+  // incorrectly bounce a signed-in member away to "/" for simply reading
+  // the Privacy Policy.
+  if (
+    pathname.startsWith("/api/") ||
+    pathname === "/auth/callback" ||
+    pathname === "/reset-password" ||
+    pathname === "/about" ||
+    pathname === "/privacy" ||
+    pathname === "/terms"
+  ) {
     return supabaseResponse;
   }
 

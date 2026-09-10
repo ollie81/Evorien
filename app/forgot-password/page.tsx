@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 
-export const metadata: Metadata = { title: "Forgot password" };
+export const metadata: Metadata = {
+  title: "Forgot password",
+  alternates: { canonical: "https://ollieen.com/forgot-password" },
+};
 
 export default async function ForgotPasswordPage({
   searchParams,

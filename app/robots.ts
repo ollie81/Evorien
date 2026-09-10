@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/welcome", "/sign-in", "/sign-up", "/forgot-password"],
+      allow: ["/welcome", "/sign-in", "/sign-up", "/forgot-password", "/about", "/privacy", "/terms"],
       disallow: "/",
     },
     sitemap: "https://ollieen.com/sitemap.xml",

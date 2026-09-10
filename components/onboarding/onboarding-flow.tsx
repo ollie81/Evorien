@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Image from "next/image";
 import { completeOnboardingAction, type OnboardingFormState } from "@/actions/onboarding";
 import { PILLARS } from "@/lib/constants/pillars";
 import { ROLES, roleLabel } from "@/lib/constants/roles";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Chip } from "@/components/shared/chip";
+import ollieenIcon from "@/app/icon.png";
 
 const TOTAL_STEPS = 5;
 const initialState: OnboardingFormState = undefined;
@@ -70,17 +72,27 @@ export function OnboardingFlow() {
       {step > 0 && <Progress value={(step / (TOTAL_STEPS - 1)) * 100} className="h-1" />}
 
       {step === 0 && (
-        <div className="space-y-6">
+        <div className="relative space-y-6 overflow-hidden">
+          <div className="pointer-events-none absolute -top-16 -left-10 -z-10 size-56 rounded-full bg-primary/25 blur-3xl" />
+          <div className="pointer-events-none absolute -top-6 -right-14 -z-10 size-48 rounded-full bg-[#ff4fa3]/15 blur-3xl" />
+
+          <Image
+            src={ollieenIcon}
+            alt=""
+            priority
+            className="size-14 rounded-2xl shadow-lg shadow-primary/25"
+          />
+
           <div className="space-y-2">
-            <h1 className="font-heading text-2xl font-semibold tracking-tight">
+            <h1 className="font-heading text-3xl font-semibold tracking-tight">
               Build the future with us.
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-lg text-muted-foreground">
               A few quick questions and we&apos;ll generate your Ollieen Passport — your identity
               across the whole network.
             </p>
           </div>
-          <Button type="button" onClick={() => setStep(1)}>
+          <Button type="button" size="lg" className="h-11 px-7 text-base" onClick={() => setStep(1)}>
             Get started
           </Button>
         </div>

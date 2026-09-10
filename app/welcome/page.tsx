@@ -10,7 +10,26 @@ import { StatTile } from "@/components/shared/stat-tile";
 import { DisclaimerBanner } from "@/components/city/disclaimer-banner";
 import ollieenIcon from "@/app/icon.png";
 
-export const metadata: Metadata = { title: "Welcome" };
+const TITLE = "Ollieen — Find Collaborators. Build Real Projects.";
+const DESCRIPTION =
+  "Ollieen is a global network for people who want to discover skills, find collaborators, build projects, and create high-autonomy communities.";
+
+export const metadata: Metadata = {
+  title: { absolute: TITLE },
+  description: DESCRIPTION,
+  alternates: { canonical: "https://ollieen.com/welcome" },
+  openGraph: { title: TITLE, description: DESCRIPTION, url: "https://ollieen.com/welcome" },
+  twitter: { title: TITLE, description: DESCRIPTION },
+};
+
+const WELCOME_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: TITLE,
+  description: DESCRIPTION,
+  url: "https://ollieen.com/welcome",
+  isPartOf: { "@type": "WebSite", name: "Ollieen", url: "https://ollieen.com" },
+};
 
 const PRODUCT_PILLARS = [
   {
@@ -61,6 +80,10 @@ export default async function WelcomePage({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-20 overflow-x-hidden px-4 py-8 sm:gap-24 sm:px-6 sm:py-10 lg:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(WELCOME_JSON_LD) }}
+      />
       <header className="flex items-center justify-between">
         <Link href="/welcome" className="flex items-center gap-2">
           <Image src={ollieenIcon} alt="" priority className="size-7 rounded-lg sm:size-8" />
@@ -222,8 +245,13 @@ export default async function WelcomePage({
         />
       </section>
 
-      <footer className="pb-2 text-center text-xs text-muted-foreground">
-        © {year} Ollieen
+      <footer className="flex flex-col items-center gap-3 pb-2 text-center text-xs text-muted-foreground">
+        <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+          <Link href="/about" className="hover:text-foreground">About</Link>
+          <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
+          <Link href="/terms" className="hover:text-foreground">Terms</Link>
+        </nav>
+        <p>© {year} Ollieen</p>
       </footer>
     </div>
   );
