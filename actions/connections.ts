@@ -6,7 +6,10 @@ import { createClient } from "@/lib/supabase/server";
 
 export type ConnectionActionState = { error?: string } | undefined;
 
-export async function sendConnectionRequestAction(targetProfileId: string): Promise<ConnectionActionState> {
+export async function sendConnectionRequestAction(
+  targetProfileId: string,
+  projectId?: string | null
+): Promise<ConnectionActionState> {
   const userId = await requireUserId();
   if (userId === targetProfileId) {
     return { error: "You can't connect with yourself." };
@@ -16,6 +19,7 @@ export async function sendConnectionRequestAction(targetProfileId: string): Prom
   const { error } = await supabase.from("connections").insert({
     requester_id: userId,
     addressee_id: targetProfileId,
+    project_id: projectId ?? null,
   });
 
   if (error) {

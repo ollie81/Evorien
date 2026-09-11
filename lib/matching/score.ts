@@ -25,11 +25,16 @@ export interface CandidateInput extends MatchingProfileInput {
   skills: MatchingSkill[];
 }
 
+export interface NeededSkillProject {
+  projectId: string;
+  projectName: string;
+}
+
 export interface MatchingContext {
   viewer: MatchingProfileInput;
   viewerSkillIds: Set<string>;
-  /** skill id -> name of the viewer's own active project that still needs it. */
-  neededSkillProjectNames: Map<string, string>;
+  /** skill id -> the viewer's own active project (id + name) that still needs it. */
+  neededSkillProjects: Map<string, NeededSkillProject>;
   /** Lowercased keywords drawn from the viewer's own INTEREST/PREFERENCE memories — best-effort, may be empty. */
   viewerMemoryKeywords: string[];
 }
@@ -37,6 +42,8 @@ export interface MatchingContext {
 export interface ScoredCandidate {
   score: number;
   reasons: string[];
+  /** Set only when the top-priority "fills an open project need" signal fired — carried onto the connection so acceptance can link straight back to that project. */
+  matchedProjectId: string | null;
 }
 
 const REPUTATION_RANK: Record<string, number> = {
@@ -71,13 +78,15 @@ function joinPillarNames(codes: string[]): string {
 export function scoreCandidate(candidate: CandidateInput, context: MatchingContext): ScoredCandidate {
   let score = 0;
   const reasons: string[] = [];
+  let matchedProjectId: string | null = null;
 
-  const fillingSkills = candidate.skills.filter((s) => context.neededSkillProjectNames.has(s.skillId));
+  const fillingSkills = candidate.skills.filter((s) => context.neededSkillProjects.has(s.skillId));
   if (fillingSkills.length > 0) {
     const top = fillingSkills[0];
-    const projectName = context.neededSkillProjectNames.get(top.skillId)!;
+    const project = context.neededSkillProjects.get(top.skillId)!;
     score += SCORE_WEIGHTS.fillsOpenProjectNeed + (top.isVerified ? SCORE_WEIGHTS.verifiedBonus : 0);
-    reasons.push(`Has ${top.name}, which your project "${projectName}" still needs.`);
+    reasons.push(`Has ${top.name}, which your project "${project.projectName}" still needs.`);
+    matchedProjectId = project.projectId;
   }
 
   const sharedPillars = candidate.pillars.filter((p) => context.viewer.pillars.includes(p));
@@ -117,5 +126,5 @@ export function scoreCandidate(candidate: CandidateInput, context: MatchingConte
 
   score += (REPUTATION_RANK[candidate.reputation_level] ?? 0) * SCORE_WEIGHTS.reputationStep;
 
-  return { score, reasons: reasons.slice(0, MAX_REASONS) };
+  return { score, reasons: reasons.slice(0, MAX_REASONS), matchedProjectId };
 }

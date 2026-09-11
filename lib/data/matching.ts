@@ -6,12 +6,20 @@ import { getMyProfile } from "@/lib/data/profile";
 import { getMyProjects } from "@/lib/data/projects";
 import { connectionState, getMyConnectionsByOtherId, type ConnectionState } from "@/lib/data/connections";
 import type { Profile } from "@/lib/types";
-import { hasEnoughSignal, scoreCandidate, type MatchingContext, type MatchingSkill } from "@/lib/matching/score";
+import {
+  hasEnoughSignal,
+  scoreCandidate,
+  type MatchingContext,
+  type MatchingSkill,
+  type NeededSkillProject,
+} from "@/lib/matching/score";
 
 export interface PotentialCollaborator {
   profile: Profile;
   reasons: string[];
   connectionState: ConnectionState;
+  /** Set when this candidate was surfaced because they fill an open need on one of the viewer's own projects — carried onto the connection so acceptance can link straight back to it. */
+  matchedProjectId: string | null;
 }
 
 export type MatchingOutcome =
@@ -53,7 +61,7 @@ export async function findPotentialCollaborators({ pillar }: { pillar?: string }
   // Skills the viewer's own still-active projects haven't filled yet — the
   // single most actionable signal (see lib/matching/score.ts).
   const activeProjects = viewerProjects.filter((p) => p.status === "ACTIVE");
-  const neededSkillProjectNames = new Map<string, string>();
+  const neededSkillProjects = new Map<string, NeededSkillProject>();
   if (activeProjects.length > 0) {
     const { data: openNeeds } = await supabase
       .from("project_skills")
@@ -66,8 +74,8 @@ export async function findPotentialCollaborators({ pillar }: { pillar?: string }
     const projectNameById = new Map(activeProjects.map((p) => [p.id, p.name]));
     for (const row of openNeeds ?? []) {
       const name = projectNameById.get(row.project_id as string);
-      if (name && !neededSkillProjectNames.has(row.skill_id as string)) {
-        neededSkillProjectNames.set(row.skill_id as string, name);
+      if (name && !neededSkillProjects.has(row.skill_id as string)) {
+        neededSkillProjects.set(row.skill_id as string, { projectId: row.project_id as string, projectName: name });
       }
     }
   }
@@ -126,15 +134,15 @@ export async function findPotentialCollaborators({ pillar }: { pillar?: string }
   const context: MatchingContext = {
     viewer: viewerProfile,
     viewerSkillIds,
-    neededSkillProjectNames,
+    neededSkillProjects,
     viewerMemoryKeywords,
   };
 
   const ranked = eligible
     .map((candidate) => {
       const input = { ...candidate, skills: skillsByProfile.get(candidate.id) ?? [] };
-      const { score, reasons } = scoreCandidate(input, context);
-      return { candidate, score, reasons };
+      const { score, reasons, matchedProjectId } = scoreCandidate(input, context);
+      return { candidate, score, reasons, matchedProjectId };
     })
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score)
@@ -144,10 +152,11 @@ export async function findPotentialCollaborators({ pillar }: { pillar?: string }
 
   return {
     status: "matches",
-    collaborators: ranked.map(({ candidate, reasons }) => ({
+    collaborators: ranked.map(({ candidate, reasons, matchedProjectId }) => ({
       profile: candidate,
       reasons,
       connectionState: connectionState(viewerId, connections.get(candidate.id)),
+      matchedProjectId,
     })),
   };
 }

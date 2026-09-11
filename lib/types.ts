@@ -31,6 +31,7 @@ export interface Connection {
   requester_id: string;
   addressee_id: string;
   status: string;
+  project_id: string | null;
   created_at: string;
 }
 

@@ -34,23 +34,32 @@ export function connectionState(userId: string, connection: Connection | undefin
   return connection.requester_id === userId ? "PENDING_SENT" : "PENDING_RECEIVED";
 }
 
+export interface ConnectionProject {
+  id: string;
+  name: string;
+}
+
 export interface PendingConnectionRequest {
   id: string;
   created_at: string;
   requester: RequesterProfile;
+  project: ConnectionProject | null;
 }
 
 interface PendingConnectionRow {
   id: string;
   created_at: string;
   requester: RequesterProfile | null;
+  project: ConnectionProject | null;
 }
 
 export async function getPendingConnectionRequests(userId: string): Promise<PendingConnectionRequest[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("connections")
-    .select("id, created_at, requester:profiles!connections_requester_id_fkey(id, full_name, username, passport_id)")
+    .select(
+      "id, created_at, requester:profiles!connections_requester_id_fkey(id, full_name, username, passport_id), project:projects(id, name)"
+    )
     .eq("addressee_id", userId)
     .eq("status", "PENDING")
     .order("created_at", { ascending: false });
@@ -63,6 +72,7 @@ export async function getPendingConnectionRequests(userId: string): Promise<Pend
 export interface AcceptedConnection {
   id: string;
   profile: RequesterProfile;
+  project: ConnectionProject | null;
 }
 
 interface AcceptedConnectionRow {
@@ -70,6 +80,7 @@ interface AcceptedConnectionRow {
   requester_id: string;
   requester: RequesterProfile | null;
   addressee: RequesterProfile | null;
+  project: ConnectionProject | null;
 }
 
 export async function getAcceptedConnections(userId: string): Promise<AcceptedConnection[]> {
@@ -77,7 +88,7 @@ export async function getAcceptedConnections(userId: string): Promise<AcceptedCo
   const { data } = await supabase
     .from("connections")
     .select(
-      "id, requester_id, requester:profiles!connections_requester_id_fkey(id, full_name, username, passport_id), addressee:profiles!connections_addressee_id_fkey(id, full_name, username, passport_id)"
+      "id, requester_id, requester:profiles!connections_requester_id_fkey(id, full_name, username, passport_id), addressee:profiles!connections_addressee_id_fkey(id, full_name, username, passport_id), project:projects(id, name)"
     )
     .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
     .eq("status", "ACCEPTED")
@@ -87,6 +98,7 @@ export async function getAcceptedConnections(userId: string): Promise<AcceptedCo
     .map((row) => ({
       id: row.id,
       profile: row.requester_id === userId ? row.addressee : row.requester,
+      project: row.project,
     }))
     .filter((row): row is AcceptedConnection => row.profile !== null);
 }

@@ -119,6 +119,7 @@ async function MatchResults({ pillar }: { pillar?: string }) {
           viewerId={viewerId}
           connectionState={collaborator.connectionState}
           reasons={collaborator.reasons}
+          matchedProjectId={collaborator.matchedProjectId}
         />
       ))}
     </div>

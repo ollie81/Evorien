@@ -20,11 +20,13 @@ export function MemberCard({
   viewerId,
   connectionState,
   reasons,
+  matchedProjectId,
 }: {
   profile: Profile;
   viewerId: string;
   connectionState: ConnectionState;
   reasons?: string[];
+  matchedProjectId?: string | null;
 }) {
   const name = profileDisplayName(profile);
   const isMatch = reasons !== undefined;
@@ -38,7 +40,9 @@ export function MemberCard({
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex items-start justify-between gap-2">
             <p className="truncate font-medium">{name}</p>
-            {profile.id !== viewerId && <ConnectButton profileId={profile.id} initialState={connectionState} />}
+            {profile.id !== viewerId && (
+              <ConnectButton profileId={profile.id} initialState={connectionState} projectId={matchedProjectId} />
+            )}
           </div>
           {profile.roles.length > 0 && (
             <p className="truncate text-sm text-muted-foreground">{profile.roles.map(roleLabel).join(" · ")}</p>

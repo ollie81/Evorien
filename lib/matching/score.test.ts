@@ -4,7 +4,7 @@ import { hasEnoughSignal, scoreCandidate, type CandidateInput, type MatchingCont
 const emptyContext = (viewer: MatchingContext["viewer"]): MatchingContext => ({
   viewer,
   viewerSkillIds: new Set(),
-  neededSkillProjectNames: new Map(),
+  neededSkillProjects: new Map(),
   viewerMemoryKeywords: [],
 });
 
@@ -70,7 +70,7 @@ describe("scoreCandidate", () => {
     const viewer = { pillars: [], roles: [], looking_for: null, contribution_summary: null, reputation_level: "MEMBER" };
     const context: MatchingContext = {
       ...emptyContext(viewer),
-      neededSkillProjectNames: new Map([["skill-1", "Solarpunk App"]]),
+      neededSkillProjects: new Map([["skill-1", { projectId: "project-1", projectName: "Solarpunk App" }]]),
     };
     const fillsNeed: CandidateInput = {
       ...baseCandidate,
@@ -87,6 +87,8 @@ describe("scoreCandidate", () => {
 
     expect(fillsResult.score).toBeGreaterThan(sharedResult.score);
     expect(fillsResult.reasons[0]).toContain("Solarpunk App");
+    expect(fillsResult.matchedProjectId).toBe("project-1");
+    expect(sharedResult.matchedProjectId).toBeNull();
   });
 
   it("gives a verified skill an extra bonus over an unverified one", () => {
@@ -122,7 +124,7 @@ describe("scoreCandidate", () => {
     const context: MatchingContext = {
       viewer,
       viewerSkillIds: new Set(["skill-2"]),
-      neededSkillProjectNames: new Map([["skill-1", "Solarpunk App"]]),
+      neededSkillProjects: new Map([["skill-1", { projectId: "project-1", projectName: "Solarpunk App" }]]),
       viewerMemoryKeywords: ["renewable"],
     };
     const candidate: CandidateInput = {
