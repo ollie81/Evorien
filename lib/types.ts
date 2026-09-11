@@ -73,7 +73,13 @@ export interface ProjectMember {
   role: string;
   status: string;
   joined_at: string;
-  profiles: { id: string; full_name: string | null; username: string | null; passport_id: string } | null;
+  profiles: {
+    id: string;
+    full_name: string | null;
+    username: string | null;
+    passport_id: string;
+    avatar_url: string | null;
+  } | null;
 }
 
 export interface Opportunity {

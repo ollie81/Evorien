@@ -13,16 +13,19 @@ import {
 import { getProjectPosts } from "@/lib/data/community";
 import { getUserId } from "@/lib/auth";
 import { joinProjectAction } from "@/actions/projects";
+import { expressProjectInterestAction } from "@/actions/connections";
+import { startConversationAction } from "@/actions/messages";
+import { getProjectInterests } from "@/lib/data/connections";
 import { projectStageLabel, projectStatusLabel, contributionTypeLabel } from "@/lib/constants/roles";
 import { profileDisplayName } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { PillarBadge } from "@/components/shared/pillar-badge";
 import { SectionHeader } from "@/components/shared/section-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { HeartHandshake, MessageSquare, Sparkles } from "lucide-react";
+import { HeartHandshake, MessageCircle, MessageSquare, Sparkles, UserPlus, Users } from "lucide-react";
 import { LogContributionDialog } from "@/components/build/log-contribution-dialog";
 import { ContributionReviewActions } from "@/components/build/contribution-review-actions";
 import { ProjectSkills } from "@/components/build/project-skills";
@@ -30,6 +33,7 @@ import { OpportunityCard } from "@/components/build/opportunity-card";
 import { CreateOpportunityDialog } from "@/components/build/create-opportunity-dialog";
 import { PostComposer } from "@/components/community/post-composer";
 import { PostCard } from "@/components/community/post-card";
+import { ConnectionRequestActions } from "@/components/passport/connection-request-actions";
 
 export default async function ProjectDetailPage({
   params,
@@ -55,7 +59,13 @@ export default async function ProjectDetailPage({
   const myMembership = members.find((m) => m.profiles?.id === userId);
   const isMember = Boolean(myMembership);
   const canReview = myMembership?.role === "OWNER" || myMembership?.role === "ADMIN";
+  const owner = members.find((m) => m.role === "OWNER");
   const applicationsByOpportunity = groupApplicationsByOpportunity(postedApplications);
+
+  // Only ever non-empty for the actual owner: getProjectInterests scopes to
+  // connections where the viewer is the addressee, which "I'm interested"
+  // below always targets at the owner specifically.
+  const interests = userId && canReview ? await getProjectInterests(project.id, userId) : [];
 
   return (
     <div className="space-y-8">
@@ -153,6 +163,7 @@ export default async function ProjectDetailPage({
               <Card key={i}>
                 <CardContent className="flex items-center gap-3">
                   <Avatar>
+                    <AvatarImage src={member.profiles?.avatar_url ?? undefined} />
                     <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <p className="flex-1 font-medium">{name}</p>
@@ -163,6 +174,68 @@ export default async function ProjectDetailPage({
           })}
         </div>
       </section>
+
+      {canReview && interests.length > 0 && (
+        <section className="space-y-3">
+          <SectionHeader
+            title="People interested"
+            subtitle="Members who connected with you about this project."
+          />
+          <div className="space-y-2">
+            {interests.map((interest) => {
+              const name = profileDisplayName(interest.person);
+              return (
+                <Card key={interest.connectionId}>
+                  <CardContent className="flex items-center justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={interest.person.avatar_url ?? undefined} />
+                        <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{name}</p>
+                        {interest.person.looking_for && (
+                          <p className="truncate text-xs text-muted-foreground">
+                            Looking for: {interest.person.looking_for}
+                          </p>
+                        )}
+                        {interest.skillNames.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {interest.skillNames.map((skill) => (
+                              <Badge key={skill} variant="outline" className="text-xs">
+                                {skill}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {interest.status === "PENDING" ? (
+                        <ConnectionRequestActions connectionId={interest.connectionId} />
+                      ) : (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="View Passport"
+                            render={<Link href={`/passport/${interest.person.id}`}><Users className="size-4" /></Link>}
+                          />
+                          <form action={startConversationAction.bind(null, interest.person.id)}>
+                            <Button type="submit" variant="ghost" size="icon-sm" aria-label="Message">
+                              <MessageCircle className="size-4" />
+                            </Button>
+                          </form>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {isMember && (
         <section className="space-y-3">
@@ -212,9 +285,19 @@ export default async function ProjectDetailPage({
       )}
 
       {userId && !isMember && (
-        <form action={joinProjectAction.bind(null, project.id)}>
-          <Button type="submit">Join this project</Button>
-        </form>
+        <div className="flex flex-wrap gap-2">
+          <form action={joinProjectAction.bind(null, project.id)}>
+            <Button type="submit">Join this project</Button>
+          </form>
+          {owner?.profiles && owner.profiles.id !== userId && (
+            <form action={expressProjectInterestAction.bind(null, owner.profiles.id, project.id)}>
+              <Button type="submit" variant="outline">
+                <UserPlus className="size-4" />
+                I&apos;m interested
+              </Button>
+            </form>
+          )}
+        </div>
       )}
     </div>
   );

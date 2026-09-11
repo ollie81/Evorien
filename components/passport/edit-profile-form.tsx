@@ -1,19 +1,103 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useId, useState, useTransition } from "react";
 import { X } from "lucide-react";
-import { updateProfileAction, addSkillAction, removeSkillAction, type UpdateProfileFormState } from "@/actions/profile";
+import { toast } from "sonner";
+import {
+  updateProfileAction,
+  addSkillAction,
+  removeSkillAction,
+  updateAvatarAction,
+  type UpdateProfileFormState,
+} from "@/actions/profile";
+import { createClient } from "@/lib/supabase/client";
 import { PILLARS } from "@/lib/constants/pillars";
 import { ROLES, roleLabel } from "@/lib/constants/roles";
-import type { Profile, ProfileSkill } from "@/lib/types";
+import { profileDisplayName, type Profile, type ProfileSkill } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Chip } from "@/components/shared/chip";
 
 const initialState: UpdateProfileFormState = undefined;
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+
+function AvatarUpload({ profile }: { profile: Profile }) {
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
+  const [uploading, setUploading] = useState(false);
+  const fileInputId = useId();
+  const name = profileDisplayName(profile);
+
+  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Choose an image file (JPG, PNG, WebP, etc).");
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast.error("That image is too large — 5MB max.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const supabase = createClient();
+      const extension = file.name.split(".").pop() ?? "jpg";
+      // Fixed filename per member (not Date.now()-suffixed like verification
+      // evidence) — a new upload should replace the old avatar, not
+      // accumulate unbounded files in the bucket.
+      const path = `${profile.id}/avatar.${extension}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(path);
+      // Cache-bust so the new image shows immediately instead of the
+      // previous upload at the same path.
+      const bustedUrl = `${publicUrl}?v=${Date.now()}`;
+
+      const result = await updateAvatarAction(bustedUrl);
+      if (result?.error) throw new Error(result.error);
+      setAvatarUrl(bustedUrl);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not upload that image.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      <Avatar className="size-16">
+        <AvatarImage src={avatarUrl ?? undefined} />
+        <AvatarFallback className="text-lg">{name.charAt(0).toUpperCase()}</AvatarFallback>
+      </Avatar>
+      <div className="space-y-1.5">
+        <Label htmlFor={fileInputId} className="sr-only">
+          Profile picture
+        </Label>
+        <input
+          id={fileInputId}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          disabled={uploading}
+          className="block text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-medium"
+        />
+        <p className="text-xs text-muted-foreground">{uploading ? "Uploading…" : "JPG, PNG or WebP. 5MB max."}</p>
+      </div>
+    </div>
+  );
+}
 
 export function EditProfileForm({ profile, skills }: { profile: Profile; skills: ProfileSkill[] }) {
   const [state, formAction, pending] = useActionState(updateProfileAction, initialState);
@@ -42,6 +126,8 @@ export function EditProfileForm({ profile, skills }: { profile: Profile; skills:
 
   return (
     <div className="space-y-8">
+      <AvatarUpload profile={profile} />
+
       <form action={formAction} className="space-y-6">
         {Array.from(selectedPillars).map((code) => (
           <input key={code} type="hidden" name="pillars" value={code} />

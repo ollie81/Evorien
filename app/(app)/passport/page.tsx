@@ -15,6 +15,7 @@ import { SectionHeader } from "@/components/shared/section-header";
 import { StatTile } from "@/components/shared/stat-tile";
 import { EmptyState } from "@/components/shared/empty-state";
 import { RequestVerificationDialog } from "@/components/passport/request-verification-dialog";
+import { getMyLatestVerification } from "@/actions/verifications";
 import { AskAiBanner } from "@/components/ai/ask-ai-banner";
 
 export const metadata: Metadata = { title: "Passport" };
@@ -23,13 +24,15 @@ export default async function PassportPage() {
   const profile = await getMyProfile();
   if (!profile) redirect("/sign-in");
 
-  const [reputationScore, skills, achievements, connections, pendingRequests] = await Promise.all([
-    getReputationScore(profile.id),
-    getMySkills(profile.id),
-    getAchievements(profile.id),
-    getAcceptedConnections(profile.id),
-    getPendingConnectionRequests(profile.id),
-  ]);
+  const [reputationScore, skills, achievements, connections, pendingRequests, latestVerification] =
+    await Promise.all([
+      getReputationScore(profile.id),
+      getMySkills(profile.id),
+      getAchievements(profile.id),
+      getAcceptedConnections(profile.id),
+      getPendingConnectionRequests(profile.id),
+      getMyLatestVerification(profile.id),
+    ]);
 
   const displayName = profileDisplayName(profile);
 
@@ -91,7 +94,18 @@ export default async function PassportPage() {
         </Card>
       </div>
 
-      <div>
+      <div className="space-y-2">
+        {latestVerification?.status === "PENDING" && (
+          <p className="text-sm text-muted-foreground">
+            Your {verificationLevelLabel(latestVerification.requested_level)} request is pending review.
+          </p>
+        )}
+        {latestVerification?.status === "REJECTED" && (
+          <p className="text-sm text-muted-foreground">
+            Your {verificationLevelLabel(latestVerification.requested_level)} request was declined
+            {latestVerification.rejection_reason ? `: ${latestVerification.rejection_reason}` : "."}
+          </p>
+        )}
         <RequestVerificationDialog userId={profile.id} />
       </div>
 

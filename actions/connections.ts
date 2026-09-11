@@ -35,6 +35,11 @@ export async function sendConnectionRequestAction(
   return undefined;
 }
 
+/** Bare-form-action wrapper around sendConnectionRequestAction — form actions must return void, not a result object to display inline (there's no inline error UI at this call site; a failure just means the request silently doesn't go through, same as a duplicate-request race would). */
+export async function expressProjectInterestAction(targetProfileId: string, projectId: string): Promise<void> {
+  await sendConnectionRequestAction(targetProfileId, projectId);
+}
+
 export async function respondToConnectionAction(
   connectionId: string,
   accept: boolean

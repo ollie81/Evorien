@@ -5,7 +5,7 @@ import { roleLabel } from "@/lib/constants/roles";
 import type { ConnectionState } from "@/lib/data/connections";
 import { ConnectButton } from "@/components/discover/connect-button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PillarBadge } from "@/components/shared/pillar-badge";
 
 /**
@@ -35,6 +35,7 @@ export function MemberCard({
     <Card>
       <CardContent className="flex items-start gap-3">
         <Avatar>
+          <AvatarImage src={profile.avatar_url ?? undefined} />
           <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1 space-y-1.5">

@@ -4,6 +4,26 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin, requireUserId } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
+export interface MyVerificationStatus {
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  requested_level: string;
+  rejection_reason: string | null;
+  created_at: string;
+}
+
+/** The member's own most recent verification request, if any — RLS (verifications_select_own) already limits this to rows they own. */
+export async function getMyLatestVerification(userId: string): Promise<MyVerificationStatus | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("verifications")
+    .select("status, requested_level, rejection_reason, created_at")
+    .eq("profile_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data as MyVerificationStatus | null;
+}
+
 export type RequestVerificationFormState = { error?: string; success?: boolean } | undefined;
 
 const VALID_LEVELS = new Set(["IDENTITY_VERIFIED", "SKILL_VERIFIED", "FOUNDER_VERIFIED"]);
@@ -57,12 +77,17 @@ export async function approveVerificationAction(verificationId: string, profileI
   revalidatePath("/admin/verifications");
 }
 
-export async function rejectVerificationAction(verificationId: string) {
+export async function rejectVerificationAction(verificationId: string, reason?: string) {
   await requireAdmin();
   const supabase = await createClient();
+  const trimmedReason = reason?.trim();
   const { error } = await supabase
     .from("verifications")
-    .update({ status: "REJECTED", reviewed_at: new Date().toISOString() })
+    .update({
+      status: "REJECTED",
+      reviewed_at: new Date().toISOString(),
+      rejection_reason: trimmedReason || null,
+    })
     .eq("id", verificationId);
   if (error) throw new Error("Could not reject this request.");
 

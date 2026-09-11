@@ -5,7 +5,7 @@ import type { Connection, Profile } from "@/lib/types";
 
 export type ConnectionState = "NONE" | "PENDING_SENT" | "PENDING_RECEIVED" | "ACCEPTED" | "DECLINED";
 
-type RequesterProfile = Pick<Profile, "id" | "full_name" | "username" | "passport_id">;
+type RequesterProfile = Pick<Profile, "id" | "full_name" | "username" | "passport_id" | "avatar_url">;
 
 /**
  * Every connection row involving the current user, keyed by the *other*
@@ -58,7 +58,7 @@ export async function getPendingConnectionRequests(userId: string): Promise<Pend
   const { data } = await supabase
     .from("connections")
     .select(
-      "id, created_at, requester:profiles!connections_requester_id_fkey(id, full_name, username, passport_id), project:projects(id, name)"
+      "id, created_at, requester:profiles!connections_requester_id_fkey(id, full_name, username, passport_id, avatar_url), project:projects(id, name)"
     )
     .eq("addressee_id", userId)
     .eq("status", "PENDING")
@@ -83,12 +83,72 @@ interface AcceptedConnectionRow {
   project: ConnectionProject | null;
 }
 
+export interface ProjectInterest {
+  connectionId: string;
+  status: "PENDING" | "ACCEPTED" | "DECLINED";
+  createdAt: string;
+  person: Profile;
+  skillNames: string[];
+}
+
+/**
+ * People who connected toward this project's OWNER specifically (see the
+ * "I'm interested" button on the project page — it always targets the
+ * owner, which is what lets connections_select_own's existing
+ * addressee_id = auth.uid() check already cover this without any RLS
+ * change). Scoped to the caller as addressee, so this only ever returns
+ * something for the actual owner viewing their own project.
+ */
+export async function getProjectInterests(projectId: string, viewerId: string): Promise<ProjectInterest[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("connections")
+    .select("id, status, created_at, requester:profiles!connections_requester_id_fkey(*)")
+    .eq("project_id", projectId)
+    .eq("addressee_id", viewerId)
+    .neq("status", "DECLINED")
+    .order("created_at", { ascending: false });
+
+  const rows = (data ?? []) as unknown as {
+    id: string;
+    status: string;
+    created_at: string;
+    requester: Profile | null;
+  }[];
+  const withPerson = rows.filter((r): r is typeof r & { requester: Profile } => r.requester !== null);
+  if (withPerson.length === 0) return [];
+
+  const { data: skillRows } = await supabase
+    .from("profile_skills")
+    .select("profile_id, skills(name)")
+    .in(
+      "profile_id",
+      withPerson.map((r) => r.requester.id)
+    );
+
+  const skillsByProfile = new Map<string, string[]>();
+  for (const row of skillRows ?? []) {
+    const id = row.profile_id as string;
+    const name = (row.skills as unknown as { name: string } | null)?.name;
+    if (!name) continue;
+    skillsByProfile.set(id, [...(skillsByProfile.get(id) ?? []), name]);
+  }
+
+  return withPerson.map((r) => ({
+    connectionId: r.id,
+    status: r.status as ProjectInterest["status"],
+    createdAt: r.created_at,
+    person: r.requester,
+    skillNames: (skillsByProfile.get(r.requester.id) ?? []).slice(0, 6),
+  }));
+}
+
 export async function getAcceptedConnections(userId: string): Promise<AcceptedConnection[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("connections")
     .select(
-      "id, requester_id, requester:profiles!connections_requester_id_fkey(id, full_name, username, passport_id), addressee:profiles!connections_addressee_id_fkey(id, full_name, username, passport_id), project:projects(id, name)"
+      "id, requester_id, requester:profiles!connections_requester_id_fkey(id, full_name, username, passport_id, avatar_url), addressee:profiles!connections_addressee_id_fkey(id, full_name, username, passport_id, avatar_url), project:projects(id, name)"
     )
     .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
     .eq("status", "ACCEPTED")

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FolderKanban, Users } from "lucide-react";
+import { FolderKanban, MessageCircle, Users } from "lucide-react";
 import { requireUserId } from "@/lib/auth";
 import { getAcceptedConnections, getPendingConnectionRequests } from "@/lib/data/connections";
+import { startConversationAction } from "@/actions/messages";
 import { profileDisplayName } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SectionHeader } from "@/components/shared/section-header";
@@ -36,6 +37,7 @@ export default async function ConnectionsPage() {
                 <CardContent className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <Avatar>
+                      <AvatarImage src={req.requester.avatar_url ?? undefined} />
                       <AvatarFallback>
                         {profileDisplayName(req.requester).charAt(0).toUpperCase()}
                       </AvatarFallback>
@@ -75,6 +77,7 @@ export default async function ConnectionsPage() {
                 <CardContent className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <Avatar>
+                      <AvatarImage src={c.profile.avatar_url ?? undefined} />
                       <AvatarFallback>{profileDisplayName(c.profile).charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
@@ -88,22 +91,29 @@ export default async function ConnectionsPage() {
                       )}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={c.project ? "View project" : "View Passport"}
-                    render={
-                      c.project ? (
-                        <Link href={`/build/${c.project.id}`}>
-                          <FolderKanban className="size-4" />
-                        </Link>
-                      ) : (
-                        <Link href={`/passport/${c.profile.id}`}>
-                          <Users className="size-4" />
-                        </Link>
-                      )
-                    }
-                  />
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={c.project ? "View project" : "View Passport"}
+                      render={
+                        c.project ? (
+                          <Link href={`/build/${c.project.id}`}>
+                            <FolderKanban className="size-4" />
+                          </Link>
+                        ) : (
+                          <Link href={`/passport/${c.profile.id}`}>
+                            <Users className="size-4" />
+                          </Link>
+                        )
+                      }
+                    />
+                    <form action={startConversationAction.bind(null, c.profile.id)}>
+                      <Button type="submit" variant="ghost" size="icon-sm" aria-label="Message">
+                        <MessageCircle className="size-4" />
+                      </Button>
+                    </form>
+                  </div>
                 </CardContent>
               </Card>
             ))}

@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   streamText: vi.fn(),
   getMemorySettings: vi.fn(),
   buildMemoryContext: vi.fn(),
+  getMyPlan: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ getUserId: mocks.getUserId }));
@@ -31,6 +32,11 @@ vi.mock("@/lib/ai/memory", () => ({
   getMemorySettings: mocks.getMemorySettings,
   buildMemoryContext: mocks.buildMemoryContext,
 }));
+// entitlements.ts is server-only (RSC-only import) and unreachable under Vitest's
+// node environment — mock it purely so the module graph resolves; resolveModelTier
+// only ever calls getMyPlan for messages that ask for something detailed, which
+// none of the existing fixtures below do.
+vi.mock("@/lib/billing/entitlements", () => ({ getMyPlan: mocks.getMyPlan }));
 vi.mock("ai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("ai")>();
   return { ...actual, streamText: mocks.streamText };
@@ -44,9 +50,17 @@ interface FakeResultOptions {
   usage: { inputTokens?: number; outputTokens?: number };
   toolResults: Array<{ toolName: string; output: unknown }>;
   failText?: boolean;
+  finishReason?: string;
 }
 
-function makeStreamTextResult({ chunks, text, usage, toolResults, failText }: FakeResultOptions) {
+function makeStreamTextResult({
+  chunks,
+  text,
+  usage,
+  toolResults,
+  failText,
+  finishReason = "stop",
+}: FakeResultOptions) {
   return {
     textStream: (async function* () {
       for (const chunk of chunks) yield chunk;
@@ -55,6 +69,7 @@ function makeStreamTextResult({ chunks, text, usage, toolResults, failText }: Fa
     text: failText ? Promise.reject(new Error("mock generation failure")) : Promise.resolve(text),
     usage: Promise.resolve(usage),
     toolResults: Promise.resolve(toolResults),
+    finishReason: Promise.resolve(finishReason),
   };
 }
 
@@ -93,6 +108,7 @@ beforeEach(() => {
   mocks.buildEvorienAiTools.mockReturnValue({});
   mocks.getMemorySettings.mockResolvedValue(true);
   mocks.buildMemoryContext.mockResolvedValue("");
+  mocks.getMyPlan.mockResolvedValue("FREE");
 });
 
 describe("POST /api/ai/chat streaming", () => {
@@ -113,7 +129,7 @@ describe("POST /api/ai/chat streaming", () => {
 
     const events = await readAllEvents(res);
     expect(events.filter((e) => e.type === "delta").map((e) => e.text).join("")).toBe("Hello world");
-    expect(events.at(-1)).toEqual({ type: "done", draft: null, memorySaved: null });
+    expect(events.at(-1)).toEqual({ type: "done", draft: null, memorySaved: null, truncated: false });
 
     expect(mocks.appendMessage).toHaveBeenCalledTimes(2);
     expect(mocks.appendMessage).toHaveBeenLastCalledWith("conv-1", "assistant", "Hello world");
@@ -137,7 +153,12 @@ describe("POST /api/ai/chat streaming", () => {
     const events = await readAllEvents(res);
 
     expect(events.filter((e) => e.type === "delta").every((e) => !e.text?.includes("{"))).toBe(true);
-    expect(events.at(-1)).toEqual({ type: "done", draft: { name: "Mock Project" }, memorySaved: null });
+    expect(events.at(-1)).toEqual({
+      type: "done",
+      draft: { name: "Mock Project" },
+      memorySaved: null,
+      truncated: false,
+    });
   });
 
   it("surfaces a saved memory's content in the done event when save_memory was called", async () => {
@@ -163,6 +184,7 @@ describe("POST /api/ai/chat streaming", () => {
       type: "done",
       draft: null,
       memorySaved: "Wants to launch a renewable-energy project.",
+      truncated: false,
     });
   });
 
@@ -185,7 +207,24 @@ describe("POST /api/ai/chat streaming", () => {
     const res = await POST(makeRequest({ message: "hi" }));
     const events = await readAllEvents(res);
 
-    expect(events.at(-1)).toEqual({ type: "done", draft: null, memorySaved: null });
+    expect(events.at(-1)).toEqual({ type: "done", draft: null, memorySaved: null, truncated: false });
+  });
+
+  it("surfaces truncated: true when the model stops because it hit its output-token budget", async () => {
+    mocks.streamText.mockReturnValue(
+      makeStreamTextResult({
+        chunks: ["This got cut"],
+        text: "This got cut",
+        usage: { inputTokens: 10, outputTokens: 500 },
+        toolResults: [],
+        finishReason: "length",
+      })
+    );
+
+    const res = await POST(makeRequest({ message: "hi" }));
+    const events = await readAllEvents(res);
+
+    expect(events.at(-1)).toEqual({ type: "done", draft: null, memorySaved: null, truncated: true });
   });
 
   it("keeps generating and still persists + records usage after the client disconnects mid-stream", async () => {

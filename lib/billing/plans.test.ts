@@ -9,6 +9,11 @@ describe("getPlanLimits", () => {
   it("returns a positive AI message limit for BUSINESS", () => {
     expect(getPlanLimits("BUSINESS").aiDailyMessageLimit).toBeGreaterThan(0);
   });
+
+  it("enables the complex AI tier for paid plans", () => {
+    expect(getPlanLimits("PRO").aiComplexTierEnabled).toBe(true);
+    expect(getPlanLimits("BUSINESS").aiComplexTierEnabled).toBe(true);
+  });
 });
 
 describe("planLabel", () => {

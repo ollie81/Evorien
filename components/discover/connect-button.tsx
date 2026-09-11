@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Check, Clock, FolderKanban, UserPlus } from "lucide-react";
+import { Check, Clock, FolderKanban, MessageCircle, UserPlus } from "lucide-react";
 import { sendConnectionRequestAction } from "@/actions/connections";
+import { startConversationAction } from "@/actions/messages";
 import type { ConnectionState } from "@/lib/data/connections";
 import { Button } from "@/components/ui/button";
 
@@ -23,25 +24,32 @@ export function ConnectButton({
 
   if (state === "ACCEPTED") {
     return (
-      <div className="flex flex-col items-end gap-1">
+      <div className="flex flex-col items-end gap-1.5">
         <span className="flex items-center gap-1 text-xs text-muted-foreground">
           <Check className="size-3.5" />
           Connected
         </span>
-        <Button
-          variant="outline"
-          size="sm"
-          render={
-            projectId ? (
-              <Link href={`/build/${projectId}`}>
-                <FolderKanban className="size-4" />
-                View Project
-              </Link>
-            ) : (
-              <Link href={`/passport/${profileId}`}>View Passport</Link>
-            )
-          }
-        />
+        <div className="flex gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            render={
+              projectId ? (
+                <Link href={`/build/${projectId}`}>
+                  <FolderKanban className="size-4" />
+                  View Project
+                </Link>
+              ) : (
+                <Link href={`/passport/${profileId}`}>View Passport</Link>
+              )
+            }
+          />
+          <form action={startConversationAction.bind(null, profileId)}>
+            <Button type="submit" size="sm" aria-label="Message">
+              <MessageCircle className="size-4" />
+            </Button>
+          </form>
+        </div>
       </div>
     );
   }

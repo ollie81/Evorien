@@ -74,15 +74,26 @@ export async function listConversations(userId: string): Promise<ConversationSum
   return (data ?? []) as ConversationSummary[];
 }
 
-export async function loadConversationMessages(conversationId: string): Promise<StoredMessage[]> {
+/**
+ * Most recent `limit` messages, oldest first. Fetched descending then
+ * reversed so a `limit` smaller than the conversation's full length still
+ * returns the *recent* tail — not the oldest messages, which a plain
+ * ascending query + limit would silently return once a conversation grows
+ * past `limit`. The default (40) is what the history views (/ai/history,
+ * /ai/[id]) show; the chat route itself asks for a much smaller window
+ * (see MODEL_CONTEXT_MESSAGE_LIMIT in app/api/ai/chat/route.ts) — every
+ * message stays in the database and visible in history either way, this
+ * only controls how much gets re-sent to the model on each request.
+ */
+export async function loadConversationMessages(conversationId: string, limit = 40): Promise<StoredMessage[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("ai_messages")
     .select("id, role, content, created_at")
     .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true })
-    .limit(40);
-  return (data ?? []) as StoredMessage[];
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return ((data ?? []) as StoredMessage[]).reverse();
 }
 
 export async function appendMessage(conversationId: string, role: StoredMessage["role"], content: string) {

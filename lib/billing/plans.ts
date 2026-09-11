@@ -4,10 +4,8 @@ export type SubscriptionPlan = (typeof SUBSCRIPTION_PLANS)[number];
 export interface PlanLimits {
   /** Max Ollieen AI messages per UTC day. See lib/ai/rate-limit.ts. */
   aiDailyMessageLimit: number;
-  // Extension point for later phases: add a field here once a second real
-  // gated feature is actually built (project analytics, advanced matching,
-  // etc). Resist a generic hasCapability()-style check until there are at
-  // least two real capabilities to generalize its shape from.
+  /** Whether a message that asks for something long/detailed (lib/ai/complexity.ts) may use the stronger, higher-output-budget model tier. FREE never can, regardless of how they ask — see resolveModelTier in app/api/ai/chat/route.ts. */
+  aiComplexTierEnabled: boolean;
 }
 
 // FREE's limit is env-var driven (AI_DAILY_MESSAGE_LIMIT), not listed here,
@@ -15,8 +13,8 @@ export interface PlanLimits {
 // today — see freeDailyLimit() in lib/ai/rate-limit.ts. These numbers are
 // placeholders pending real pricing, not final.
 const PAID_PLAN_LIMITS: Record<Exclude<SubscriptionPlan, "FREE">, PlanLimits> = {
-  PRO: { aiDailyMessageLimit: 150 },
-  BUSINESS: { aiDailyMessageLimit: 150 },
+  PRO: { aiDailyMessageLimit: 150, aiComplexTierEnabled: true },
+  BUSINESS: { aiDailyMessageLimit: 150, aiComplexTierEnabled: true },
 };
 
 export function getPlanLimits(plan: Exclude<SubscriptionPlan, "FREE">): PlanLimits {

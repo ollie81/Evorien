@@ -53,30 +53,52 @@ export interface AdminVerificationRequest {
   status: string;
   notes: string | null;
   evidence_path: string | null;
+  rejection_reason: string | null;
   created_at: string;
+  reviewed_at: string | null;
   profile: { full_name: string | null; username: string | null; passport_id: string } | null;
 }
 
-export async function getPendingVerifications(): Promise<AdminVerificationRequest[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("verifications")
-    .select(
-      "id, profile_id, requested_level, status, notes, evidence_path, created_at, profiles!verifications_profile_id_fkey(full_name, username, passport_id)"
-    )
-    .eq("status", "PENDING")
-    .order("created_at", { ascending: true });
+const VERIFICATION_SELECT =
+  "id, profile_id, requested_level, status, notes, evidence_path, rejection_reason, created_at, reviewed_at, profiles!verifications_profile_id_fkey(full_name, username, passport_id)";
 
-  return (data ?? []).map((row) => ({
+function mapVerificationRow(row: Record<string, unknown>): AdminVerificationRequest {
+  return {
     id: row.id as string,
     profile_id: row.profile_id as string,
     requested_level: row.requested_level as string,
     status: row.status as string,
     notes: row.notes as string | null,
     evidence_path: row.evidence_path as string | null,
+    rejection_reason: row.rejection_reason as string | null,
     created_at: row.created_at as string,
+    reviewed_at: row.reviewed_at as string | null,
     profile: row.profiles as unknown as AdminVerificationRequest["profile"],
-  }));
+  };
+}
+
+export async function getPendingVerifications(): Promise<AdminVerificationRequest[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("verifications")
+    .select(VERIFICATION_SELECT)
+    .eq("status", "PENDING")
+    .order("created_at", { ascending: true });
+
+  return (data ?? []).map(mapVerificationRow);
+}
+
+/** For admin context only — never shown to other members. Lets a reviewer see what was already decided before making another call. */
+export async function getRecentlyReviewedVerifications(limit = 20): Promise<AdminVerificationRequest[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("verifications")
+    .select(VERIFICATION_SELECT)
+    .neq("status", "PENDING")
+    .order("reviewed_at", { ascending: false })
+    .limit(limit);
+
+  return (data ?? []).map(mapVerificationRow);
 }
 
 export async function getPendingVerificationCount(): Promise<number> {

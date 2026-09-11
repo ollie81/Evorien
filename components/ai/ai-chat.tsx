@@ -15,11 +15,12 @@ export interface ChatMessage {
   content: string;
   draft?: AiProjectDraft | null;
   memorySaved?: string | null;
+  truncated?: boolean;
 }
 
 type ChatStreamEvent =
   | { type: "delta"; text: string }
-  | { type: "done"; draft: AiProjectDraft | null; memorySaved: string | null }
+  | { type: "done"; draft: AiProjectDraft | null; memorySaved: string | null; truncated?: boolean }
   | { type: "error"; message: string };
 
 const SUGGESTED_PROMPTS = [
@@ -133,15 +134,17 @@ export function AiChat({
               );
             }
           } else if (event.type === "done") {
-            const { draft, memorySaved } = event;
+            const { draft, memorySaved, truncated } = event;
             if (!assistantStarted) {
               assistantStarted = true;
               setMessages((prev) => [
                 ...prev,
-                { id: assistantId, role: "assistant", content: "", draft, memorySaved },
+                { id: assistantId, role: "assistant", content: "", draft, memorySaved, truncated },
               ]);
             } else {
-              setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, draft, memorySaved } : m)));
+              setMessages((prev) =>
+                prev.map((m) => (m.id === assistantId ? { ...m, draft, memorySaved, truncated } : m))
+              );
             }
           } else if (event.type === "error") {
             setError(event.message);
@@ -207,6 +210,11 @@ export function AiChat({
                   </div>
                 )}
                 {m.draft && <ProjectDraftCard draft={m.draft} />}
+                {m.truncated && (
+                  <p className="text-xs text-muted-foreground">
+                    Response shortened — ask me to continue for more.
+                  </p>
+                )}
                 {m.memorySaved && (
                   <Link
                     href="/ai/memory"

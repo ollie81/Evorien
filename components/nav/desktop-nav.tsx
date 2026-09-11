@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Settings, ShieldCheck } from "lucide-react";
+import { LogOut, MessageCircle, Settings, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "@/actions/auth";
 import type { Notification } from "@/lib/data/notifications";
@@ -13,10 +13,12 @@ import { NAV_ITEMS } from "./nav-items";
 export function DesktopNav({
   notifications,
   unreadCount,
+  unreadMessageCount,
   isAdmin,
 }: {
   notifications: Notification[];
   unreadCount: number;
+  unreadMessageCount: number;
   isAdmin: boolean;
 }) {
   const pathname = usePathname();
@@ -62,6 +64,21 @@ export function DesktopNav({
               }
             />
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            aria-label="Messages"
+            render={
+              <Link href="/messages">
+                <MessageCircle className="size-4.5" />
+              </Link>
+            }
+          >
+            {unreadMessageCount > 0 && (
+              <span className="absolute right-1 top-1 flex size-2 rounded-full bg-primary" />
+            )}
+          </Button>
           <NotificationBell notifications={notifications} unreadCount={unreadCount} />
           <Button
             variant="ghost"

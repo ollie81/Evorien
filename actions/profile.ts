@@ -8,6 +8,26 @@ import { getOrCreateSkillId } from "@/lib/skills";
 
 export type UpdateProfileFormState = { error?: string } | undefined;
 
+/**
+ * The upload itself happens client-side, direct to the public "avatars"
+ * bucket (see components/passport/edit-profile-form.tsx and the
+ * avatars_owner_write storage policy, which already restricts writes to
+ * the caller's own auth.uid()-prefixed folder). This just records the
+ * resulting public URL on the profile — it never touches storage itself,
+ * so it can't be used to point a profile at someone else's uploaded file
+ * path validation-free; a bogus non-avatars URL just fails to render.
+ */
+export async function updateAvatarAction(avatarUrl: string): Promise<{ error?: string } | undefined> {
+  const userId = await requireUserId();
+  const supabase = await createClient();
+  const { error } = await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", userId);
+  if (error) return { error: "Could not update your profile picture." };
+
+  revalidatePath("/passport");
+  revalidatePath("/passport/edit");
+  return undefined;
+}
+
 export async function updateProfileAction(
   _prevState: UpdateProfileFormState,
   formData: FormData

@@ -27,7 +27,7 @@ export async function getProjectMembers(projectId: string): Promise<ProjectMembe
   const supabase = await createClient();
   const { data } = await supabase
     .from("project_members")
-    .select("role, status, joined_at, profiles(id, full_name, username, passport_id)")
+    .select("role, status, joined_at, profiles(id, full_name, username, passport_id, avatar_url)")
     .eq("project_id", projectId)
     .eq("status", "ACTIVE")
     .order("joined_at");
