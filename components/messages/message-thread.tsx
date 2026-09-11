@@ -37,6 +37,14 @@ export function MessageThread({
   }, [messages.length]);
 
   useEffect(() => {
+    // Marking read is a mutation, so it belongs here (a client-triggered
+    // action dispatch) rather than in the server page's render — a
+    // Server Function that calls revalidatePath can only run inside an
+    // actual action dispatch, not while a route is just rendering.
+    markConversationReadAction(conversationId).catch(() => {});
+  }, [conversationId]);
+
+  useEffect(() => {
     const id = setInterval(async () => {
       try {
         const fresh = await getMessagesAction(conversationId);

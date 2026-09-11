@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireUserId } from "@/lib/auth";
 import { getConversationForViewer, listMessages } from "@/lib/data/messages";
-import { markConversationReadAction } from "@/actions/messages";
 import { profileDisplayName } from "@/lib/types";
 import { MessageThread } from "@/components/messages/message-thread";
 
@@ -16,7 +15,6 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
   if (!access) notFound();
 
   const messages = await listMessages(id);
-  await markConversationReadAction(id);
 
   return (
     <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-2xl flex-col">
