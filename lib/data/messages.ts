@@ -22,90 +22,136 @@ export interface ChatMessage {
   readAt: string | null;
 }
 
-interface ConversationRow {
+interface ConnectionRow {
   id: string;
-  last_message_at: string;
-  connection: {
-    id: string;
-    requester_id: string;
-    addressee_id: string;
-    requester: ConversationParty | null;
-    addressee: ConversationParty | null;
-  } | null;
+  requester_id: string;
+  requester: ConversationParty | null;
+  addressee: ConversationParty | null;
 }
 
-/** Every conversation the member is a party to, newest activity first, with an unread count and a short preview of the last message. */
-export async function getMyConversations(userId: string): Promise<ConversationSummary[]> {
+export interface MessageableConnection {
+  connectionId: string;
+  otherParty: ConversationParty;
+}
+
+/**
+ * The member's accepted connections, each paired with the *other* party's
+ * profile — a plain top-level filter on connections itself (the same
+ * proven pattern getAcceptedConnections in lib/data/connections.ts already
+ * uses), deliberately NOT an embedded-resource filter on conversations
+ * joined to connections. An earlier version filtered conversations via
+ * `.or(..., { referencedTable: "connections" })` while aliasing the embed
+ * as `connection:connections(...)` — a name mismatch between the alias
+ * PostgREST uses to resolve an embedded filter and the real table name
+ * passed here, which could not be fully verified against RLS as a real
+ * signed-in user from this environment (only anon-key smoke tests were
+ * possible) and coincided with a live crash on /messages. This version
+ * avoids that whole class of risk by never filtering an embedded resource.
+ */
+async function getAcceptedConnectionParties(
+  userId: string
+): Promise<Map<string, { connectionId: string; otherParty: ConversationParty }>> {
   const supabase = await createClient();
   const { data } = await supabase
-    .from("conversations")
+    .from("connections")
     .select(
-      `id, last_message_at,
-       connection:connections!inner(
-         id, requester_id, addressee_id,
-         requester:profiles!connections_requester_id_fkey(id, full_name, username, passport_id, avatar_url),
-         addressee:profiles!connections_addressee_id_fkey(id, full_name, username, passport_id, avatar_url)
-       )`
+      `id, requester_id,
+       requester:profiles!connections_requester_id_fkey(id, full_name, username, passport_id, avatar_url),
+       addressee:profiles!connections_addressee_id_fkey(id, full_name, username, passport_id, avatar_url)`
     )
-    .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`, { referencedTable: "connections" })
+    .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+    .eq("status", "ACCEPTED");
+
+  const map = new Map<string, { connectionId: string; otherParty: ConversationParty }>();
+  for (const row of (data ?? []) as unknown as ConnectionRow[]) {
+    const otherParty = row.requester_id === userId ? row.addressee : row.requester;
+    if (!otherParty) continue;
+    map.set(row.id, { connectionId: row.id, otherParty });
+  }
+  return map;
+}
+
+export interface MessagingHub {
+  conversations: ConversationSummary[];
+  /** Accepted connections with no conversation yet — lets /messages offer "start chatting" for a brand-new connection instead of only ever showing existing threads. */
+  messageable: MessageableConnection[];
+}
+
+/** Everything /messages needs in one place: existing threads (newest activity first, with unread counts and a preview) plus every accepted connection that doesn't have a thread yet. */
+export async function getMyMessagingHub(userId: string): Promise<MessagingHub> {
+  const supabase = await createClient();
+  const connectionParties = await getAcceptedConnectionParties(userId);
+  if (connectionParties.size === 0) return { conversations: [], messageable: [] };
+
+  const { data: conversationRows } = await supabase
+    .from("conversations")
+    .select("id, connection_id, last_message_at")
+    .in("connection_id", [...connectionParties.keys()])
     .order("last_message_at", { ascending: false });
 
-  const rows = (data ?? []) as unknown as ConversationRow[];
-  const conversationIds = rows.map((r) => r.id);
-  if (conversationIds.length === 0) return [];
+  const conversationIds = (conversationRows ?? []).map((c) => c.id as string);
 
-  const [{ data: lastMessages }, { data: unreadRows }] = await Promise.all([
-    supabase
-      .from("messages")
-      .select("conversation_id, content, created_at")
-      .in("conversation_id", conversationIds)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("messages")
-      .select("conversation_id")
-      .in("conversation_id", conversationIds)
-      .neq("sender_id", userId)
-      .is("read_at", null),
-  ]);
+  const [lastMessagesResult, unreadRowsResult] = conversationIds.length
+    ? await Promise.all([
+        supabase
+          .from("messages")
+          .select("conversation_id, content, created_at")
+          .in("conversation_id", conversationIds)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("messages")
+          .select("conversation_id")
+          .in("conversation_id", conversationIds)
+          .neq("sender_id", userId)
+          .is("read_at", null),
+      ])
+    : [{ data: [] }, { data: [] }];
 
   const previewByConversation = new Map<string, string>();
-  for (const m of lastMessages ?? []) {
+  for (const m of lastMessagesResult.data ?? []) {
     const id = m.conversation_id as string;
     if (!previewByConversation.has(id)) previewByConversation.set(id, m.content as string);
   }
 
   const unreadCountByConversation = new Map<string, number>();
-  for (const m of unreadRows ?? []) {
+  for (const m of unreadRowsResult.data ?? []) {
     const id = m.conversation_id as string;
     unreadCountByConversation.set(id, (unreadCountByConversation.get(id) ?? 0) + 1);
   }
 
-  return rows
-    .filter((r): r is ConversationRow & { connection: NonNullable<ConversationRow["connection"]> } =>
-      Boolean(r.connection?.requester && r.connection?.addressee)
-    )
-    .map((r) => {
-      const isRequester = r.connection.requester_id === userId;
-      const otherParty = isRequester ? r.connection.addressee! : r.connection.requester!;
-      return {
-        id: r.id,
-        connectionId: r.connection.id,
-        lastMessageAt: r.last_message_at,
-        otherParty,
-        lastMessagePreview: previewByConversation.get(r.id) ?? null,
-        unreadCount: unreadCountByConversation.get(r.id) ?? 0,
-      };
+  const threadedConnectionIds = new Set<string>();
+  const conversations: ConversationSummary[] = [];
+  for (const row of conversationRows ?? []) {
+    const connectionId = row.connection_id as string;
+    const party = connectionParties.get(connectionId);
+    if (!party) continue;
+    threadedConnectionIds.add(connectionId);
+    conversations.push({
+      id: row.id as string,
+      connectionId,
+      lastMessageAt: row.last_message_at as string,
+      otherParty: party.otherParty,
+      lastMessagePreview: previewByConversation.get(row.id as string) ?? null,
+      unreadCount: unreadCountByConversation.get(row.id as string) ?? 0,
     });
+  }
+
+  const messageable = [...connectionParties.values()].filter((p) => !threadedConnectionIds.has(p.connectionId));
+
+  return { conversations, messageable };
 }
 
 export async function getUnreadMessageCount(userId: string): Promise<number> {
   const supabase = await createClient();
-  const { data: myConversations } = await supabase
-    .from("conversations")
-    .select("id, connection:connections!inner(requester_id, addressee_id)")
-    .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`, { referencedTable: "connections" });
+  const connectionParties = await getAcceptedConnectionParties(userId);
+  if (connectionParties.size === 0) return 0;
 
-  const ids = (myConversations ?? []).map((c) => c.id as string);
+  const { data: conversationRows } = await supabase
+    .from("conversations")
+    .select("id")
+    .in("connection_id", [...connectionParties.keys()]);
+
+  const ids = (conversationRows ?? []).map((c) => c.id as string);
   if (ids.length === 0) return 0;
 
   const { count } = await supabase
@@ -124,7 +170,26 @@ export interface ConversationAccess {
   otherParty: ConversationParty;
 }
 
-/** Loads a conversation only if the caller is genuinely a party to it — RLS already guarantees this, this just gives the page the other party's identity to render (never trusts a client-supplied "who am I talking to"). */
+interface ConversationWithConnectionRow {
+  id: string;
+  connection: {
+    id: string;
+    requester_id: string;
+    addressee_id: string;
+    requester: ConversationParty | null;
+    addressee: ConversationParty | null;
+  } | null;
+}
+
+/**
+ * Loads a conversation only if the caller is genuinely a party to it — RLS
+ * already guarantees this, this just gives the page the other party's
+ * identity to render (never trusts a client-supplied "who am I talking
+ * to"). Filters only on the conversation's own id (not on an embedded
+ * resource), so this one doesn't carry the referencedTable-alias risk
+ * getMyMessagingHub was rebuilt to avoid — the embed here is just read,
+ * never filtered.
+ */
 export async function getConversationForViewer(
   conversationId: string,
   userId: string
@@ -143,7 +208,7 @@ export async function getConversationForViewer(
     .eq("id", conversationId)
     .maybeSingle();
 
-  const row = data as unknown as ConversationRow | null;
+  const row = data as unknown as ConversationWithConnectionRow | null;
   if (!row?.connection?.requester || !row.connection?.addressee) return null;
 
   const isRequester = row.connection.requester_id === userId;
