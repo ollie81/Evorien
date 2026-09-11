@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Check, Clock, FolderKanban, MessageCircle, UserPlus } from "lucide-react";
+import { Check, Clock, FolderKanban, UserPlus } from "lucide-react";
 import { sendConnectionRequestAction } from "@/actions/connections";
-import { startConversationAction } from "@/actions/messages";
+import { MessageButton } from "@/components/messages/message-button";
 import type { ConnectionState } from "@/lib/data/connections";
 import { Button } from "@/components/ui/button";
 
@@ -44,11 +44,7 @@ export function ConnectButton({
               )
             }
           />
-          <form action={startConversationAction.bind(null, profileId)}>
-            <Button type="submit" size="sm" aria-label="Message">
-              <MessageCircle className="size-4" />
-            </Button>
-          </form>
+          <MessageButton profileId={profileId} />
         </div>
       </div>
     );

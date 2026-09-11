@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FolderKanban, MessageCircle, Users } from "lucide-react";
+import { FolderKanban, Users } from "lucide-react";
 import { requireUserId } from "@/lib/auth";
 import { getAcceptedConnections, getPendingConnectionRequests } from "@/lib/data/connections";
-import { startConversationAction } from "@/actions/messages";
+import { MessageButton } from "@/components/messages/message-button";
 import { profileDisplayName } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -108,11 +108,7 @@ export default async function ConnectionsPage() {
                         )
                       }
                     />
-                    <form action={startConversationAction.bind(null, c.profile.id)}>
-                      <Button type="submit" variant="ghost" size="icon-sm" aria-label="Message">
-                        <MessageCircle className="size-4" />
-                      </Button>
-                    </form>
+                    <MessageButton profileId={c.profile.id} variant="ghost" size="icon-sm" />
                   </div>
                 </CardContent>
               </Card>

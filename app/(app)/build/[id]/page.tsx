@@ -14,7 +14,7 @@ import { getProjectPosts } from "@/lib/data/community";
 import { getUserId } from "@/lib/auth";
 import { joinProjectAction } from "@/actions/projects";
 import { expressProjectInterestAction } from "@/actions/connections";
-import { startConversationAction } from "@/actions/messages";
+import { MessageButton } from "@/components/messages/message-button";
 import { getProjectInterests } from "@/lib/data/connections";
 import { projectStageLabel, projectStatusLabel, contributionTypeLabel } from "@/lib/constants/roles";
 import { profileDisplayName } from "@/lib/types";
@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { PillarBadge } from "@/components/shared/pillar-badge";
 import { SectionHeader } from "@/components/shared/section-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { HeartHandshake, MessageCircle, MessageSquare, Sparkles, UserPlus, Users } from "lucide-react";
+import { HeartHandshake, MessageSquare, Sparkles, UserPlus, Users } from "lucide-react";
 import { LogContributionDialog } from "@/components/build/log-contribution-dialog";
 import { ContributionReviewActions } from "@/components/build/contribution-review-actions";
 import { ProjectSkills } from "@/components/build/project-skills";
@@ -221,11 +221,7 @@ export default async function ProjectDetailPage({
                             aria-label="View Passport"
                             render={<Link href={`/passport/${interest.person.id}`}><Users className="size-4" /></Link>}
                           />
-                          <form action={startConversationAction.bind(null, interest.person.id)}>
-                            <Button type="submit" variant="ghost" size="icon-sm" aria-label="Message">
-                              <MessageCircle className="size-4" />
-                            </Button>
-                          </form>
+                          <MessageButton profileId={interest.person.id} variant="ghost" size="icon-sm" />
                         </>
                       )}
                     </div>

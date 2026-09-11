@@ -23,6 +23,9 @@ export async function sendConnectionRequestAction(
   });
 
   if (error) {
+    if (error.code !== "23505") {
+      console.error("sendConnectionRequestAction: could not insert connection", error);
+    }
     return {
       error:
         error.code === "23505"

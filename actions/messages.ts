@@ -1,24 +1,30 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { requireUserId } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getAcceptedConnectionBetween, getConversationForViewer, listMessages, type ChatMessage } from "@/lib/data/messages";
 
 const MAX_MESSAGE_LENGTH = 4000;
 
+export type StartConversationState = { conversationId: string } | { error: string };
+
 /**
  * Finds (or creates) the one conversation for an ACCEPTED connection with
- * the given member, then redirects there — this is the only way a
- * conversation ever gets created, so "message someone" always requires a
- * real accepted connection first, never a bare profile id from the client.
+ * the given member — this is the only way a conversation ever gets
+ * created, so "message someone" always requires a real accepted connection
+ * first, never a bare profile id from the client.
+ *
+ * Returns a result instead of redirecting itself: this is called directly
+ * (not as a bare <form action>) so the caller can navigate on success and
+ * show a friendly inline error otherwise — a plain thrown Error here would
+ * surface as an unhandled server crash instead of a recoverable message.
  */
-export async function startConversationAction(otherProfileId: string) {
+export async function startConversationAction(otherProfileId: string): Promise<StartConversationState> {
   const userId = await requireUserId();
   const connectionId = await getAcceptedConnectionBetween(userId, otherProfileId);
   if (!connectionId) {
-    throw new Error("You can only message people you're connected with.");
+    return { error: "You can only message people you're connected with." };
   }
 
   const supabase = await createClient();
@@ -29,7 +35,7 @@ export async function startConversationAction(otherProfileId: string) {
     .eq("connection_id", connectionId)
     .maybeSingle();
 
-  if (existing) redirect(`/messages/${existing.id}`);
+  if (existing) return { conversationId: existing.id };
 
   const { data, error } = await supabase
     .from("conversations")
@@ -37,8 +43,11 @@ export async function startConversationAction(otherProfileId: string) {
     .select("id")
     .single();
 
-  if (error || !data) throw new Error("Could not start this conversation.");
-  redirect(`/messages/${data.id}`);
+  if (error || !data) {
+    console.error("startConversationAction: could not create conversation", error);
+    return { error: "Could not start this conversation. Please try again." };
+  }
+  return { conversationId: data.id };
 }
 
 export type SendMessageState = { error?: string } | undefined;
@@ -57,7 +66,10 @@ export async function sendMessageAction(conversationId: string, content: string)
     .from("messages")
     .insert({ conversation_id: conversationId, sender_id: userId, content: trimmed });
 
-  if (error) return { error: "Could not send this message. You may no longer be connected with this member." };
+  if (error) {
+    console.error("sendMessageAction: could not insert message", error);
+    return { error: "Could not send this message. You may no longer be connected with this member." };
+  }
 
   await supabase
     .from("conversations")
