@@ -24,7 +24,7 @@ export default async function DiscoverPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const params = await searchParams;
-  const tab = params.tab === "projects" ? "projects" : params.tab === "matches" ? "matches" : "people";
+  const tab = params.tab === "people" ? "people" : params.tab === "matches" ? "matches" : "projects";
   const q = typeof params.q === "string" ? params.q : undefined;
   const pillar = typeof params.pillar === "string" ? params.pillar : undefined;
   const mySkillsOnly = params.mySkills === "1";

@@ -34,9 +34,9 @@ export function MemberCard({
   return (
     <Card>
       <CardContent className="flex items-start gap-3">
-        <Avatar>
+        <Avatar size="lg" className="size-14">
           <AvatarImage src={profile.avatar_url ?? undefined} />
-          <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
+          <AvatarFallback className="text-base">{name.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex items-start justify-between gap-2">

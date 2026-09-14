@@ -37,9 +37,9 @@ export function DiscoverControls({ activeTab }: { activeTab: "people" | "matches
     <div className="space-y-4">
       <Tabs value={activeTab} onValueChange={(tab) => updateParams({ tab })}>
         <TabsList>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="people">People</TabsTrigger>
           <TabsTrigger value="matches">For You</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
         </TabsList>
       </Tabs>
 
