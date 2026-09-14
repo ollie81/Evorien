@@ -1,8 +1,16 @@
 import Link from "next/link";
-import { Bot } from "lucide-react";
+import { Bot, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
-/** Contextual "Ask Ollieen AI" entry point — same card everywhere so it reads as one feature, not a per-page widget. */
+/**
+ * Contextual "Ask Ollieen AI" entry point — same card everywhere so it reads
+ * as one feature, not a per-page widget. This is a link to the full chat at
+ * /ai, not an inline input, so the chevron and title/subtitle copy on every
+ * usage should read as "tap to go ask", never as an invitation to type
+ * directly into the card (that phrasing was the actual source of confusion
+ * on Discover — its subtitle used to say "Describe who or what you need",
+ * which reads like there's a text box right here).
+ */
 export function AskAiBanner({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <Link href="/ai">
@@ -15,6 +23,7 @@ export function AskAiBanner({ title, subtitle }: { title: string; subtitle: stri
             <p className="font-medium">{title}</p>
             <p className="text-sm text-muted-foreground">{subtitle}</p>
           </div>
+          <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         </CardContent>
       </Card>
     </Link>
