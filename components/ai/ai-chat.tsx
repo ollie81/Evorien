@@ -92,9 +92,6 @@ export function AiChat({
       const limitHeader = res.headers.get("X-Ai-Limit");
       if (newConversationId) {
         setConversationId(newConversationId);
-        // A page refresh shouldn't lose the thread — only replace the URL
-        // the first time a brand-new conversation gets its real id.
-        if (wasNewConversation) router.replace(`/ai/${newConversationId}`);
       }
       if (remainingHeader !== null && limitHeader !== null) {
         setDailyStatus({ remaining: Number(remainingHeader), limit: Number(limitHeader) });
@@ -150,6 +147,16 @@ export function AiChat({
             setError(event.message);
           }
         }
+      }
+
+      // Only move the URL to /ai/<id> once the reply has actually finished
+      // streaming (the server has, by this point, already persisted it —
+      // see the "done" event's ordering in the API route) — swapping the
+      // URL earlier would trigger a navigation whose fresh server-side load
+      // could race the still-in-flight save and briefly load a history
+      // missing the very reply that's on screen.
+      if (newConversationId && wasNewConversation) {
+        router.replace(`/ai/${newConversationId}`);
       }
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
