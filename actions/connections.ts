@@ -30,7 +30,11 @@ export async function sendConnectionRequestAction(
       error:
         error.code === "23505"
           ? "A connection already exists with this member."
-          : "Could not send request.",
+          // TEMPORARY: includes the raw db error code/message so a live
+          // failure is diagnosable without production log access — revert
+          // to a plain "Could not send request." once the root cause behind
+          // this specific failure is found and fixed.
+          : `Could not send request. (${error.code ?? "no code"}: ${error.message})`,
     };
   }
 
