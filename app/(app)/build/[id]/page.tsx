@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { PillarBadge } from "@/components/shared/pillar-badge";
 import { SectionHeader } from "@/components/shared/section-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { HeartHandshake, MessageSquare, Sparkles, UserPlus, Users } from "lucide-react";
+import { Hammer, HeartHandshake, MessageSquare, Sparkles, UserPlus, Users } from "lucide-react";
 import { LogContributionDialog } from "@/components/build/log-contribution-dialog";
 import { ContributionReviewActions } from "@/components/build/contribution-review-actions";
 import { ProjectSkills } from "@/components/build/project-skills";
@@ -86,6 +86,44 @@ export default async function ProjectDetailPage({
         <Badge variant="secondary">{projectStageLabel(project.stage)}</Badge>
         <Badge variant="outline">{projectStatusLabel(project.status)}</Badge>
       </div>
+
+      {canReview && (
+        <section className="space-y-3">
+          <SectionHeader title="Next steps" subtitle="Get the right people looking at this." />
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Button
+              variant="outline"
+              className="justify-start"
+              render={
+                <Link href="/discover?tab=people">
+                  <Users className="size-4" />
+                  Find collaborators
+                </Link>
+              }
+            />
+            <Button
+              variant="outline"
+              className="justify-start"
+              render={
+                <Link href="/ai">
+                  <Sparkles className="size-4" />
+                  Ask Ollieen AI
+                </Link>
+              }
+            />
+            <Button
+              variant="outline"
+              className="justify-start"
+              render={
+                <Link href={`/build/${project.id}/edit`}>
+                  <Hammer className="size-4" />
+                  Add more detail
+                </Link>
+              }
+            />
+          </div>
+        </section>
+      )}
 
       {project.description && (
         <section className="space-y-3">

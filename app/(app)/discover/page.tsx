@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { Compass, Hammer, Sparkles } from "lucide-react";
+import { ArrowRight, Compass, Hammer, Sparkles } from "lucide-react";
+import { projectStageLabel } from "@/lib/constants/roles";
+import { Badge } from "@/components/ui/badge";
 import { searchPeople, searchProjects } from "@/lib/data/discover";
 import { findPotentialCollaborators } from "@/lib/data/matching";
 import { connectionState, getMyConnectionsByOtherId } from "@/lib/data/connections";
@@ -158,14 +160,27 @@ async function ProjectResults({
       {projects.map((project) => (
         <Link key={project.id} href={`/build/${project.id}`}>
           <Card className="h-full transition-colors hover:bg-accent/50">
-            <CardContent className="flex items-start justify-between gap-3">
-              <div className="space-y-1">
-                <p className="font-medium">{project.name}</p>
-                {project.tagline && (
-                  <p className="text-sm text-muted-foreground">{project.tagline}</p>
-                )}
+            <CardContent className="flex h-full flex-col gap-2.5">
+              <div className="flex items-start justify-between gap-3">
+                <p className="min-w-0 font-medium">{project.name}</p>
+                {project.pillar_code && <PillarBadge code={project.pillar_code} dense />}
               </div>
-              {project.pillar_code && <PillarBadge code={project.pillar_code} dense />}
+              {project.tagline && (
+                <p className="line-clamp-2 text-sm text-muted-foreground">{project.tagline}</p>
+              )}
+              {project.looking_for && (
+                <p className="line-clamp-2 text-sm">
+                  <span className="text-muted-foreground">Looking for: </span>
+                  {project.looking_for}
+                </p>
+              )}
+              <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+                <Badge variant="secondary">{projectStageLabel(project.stage)}</Badge>
+                <span className="flex items-center gap-1 text-sm font-medium text-primary">
+                  View project
+                  <ArrowRight className="size-3.5" aria-hidden />
+                </span>
+              </div>
             </CardContent>
           </Card>
         </Link>

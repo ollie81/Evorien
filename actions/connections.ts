@@ -59,8 +59,8 @@ export async function respondToConnectionAction(
     return { error: "Could not update this request." };
   }
 
-  revalidatePath("/passport/connections");
-  revalidatePath("/passport");
-  revalidatePath("/notifications");
+  // Responding changes the pending-request count surfaced on Home and in the
+  // nav, so this has to invalidate the layout, not just these two pages.
+  revalidatePath("/", "layout");
   return undefined;
 }

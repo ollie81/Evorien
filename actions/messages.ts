@@ -77,7 +77,9 @@ export async function sendMessageAction(conversationId: string, content: string)
     .eq("id", conversationId);
 
   revalidatePath(`/messages/${conversationId}`);
-  revalidatePath("/messages");
+  // "layout" so the nav's unread-message dot (rendered by app/(app)/layout.tsx)
+  // refreshes too — a page-only revalidate leaves it stale on every other route.
+  revalidatePath("/", "layout");
   return undefined;
 }
 
@@ -99,5 +101,5 @@ export async function markConversationReadAction(conversationId: string) {
     .neq("sender_id", userId)
     .is("read_at", null);
 
-  revalidatePath("/messages");
+  revalidatePath("/", "layout");
 }
