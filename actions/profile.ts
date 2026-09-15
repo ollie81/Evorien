@@ -28,6 +28,21 @@ export async function updateAvatarAction(avatarUrl: string): Promise<{ error?: s
   return undefined;
 }
 
+/** Only ever writes the caller's own row — the id comes from the session, never from the client. */
+export async function setEmailNotificationsAction(enabled: boolean): Promise<{ error?: string } | undefined> {
+  const userId = await requireUserId();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ email_notifications_enabled: enabled })
+    .eq("id", userId);
+
+  if (error) return { error: "Could not update your email preference." };
+
+  revalidatePath("/settings");
+  return undefined;
+}
+
 export async function updateProfileAction(
   _prevState: UpdateProfileFormState,
   formData: FormData

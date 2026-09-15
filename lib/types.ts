@@ -17,6 +17,7 @@ export interface Profile {
   reputation_level: string;
   is_admin: boolean;
   onboarding_completed: boolean;
+  email_notifications_enabled: boolean;
   created_at: string;
 }
 
