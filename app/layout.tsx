@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -89,6 +90,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <Toaster />
         </ThemeProvider>
+        {/*
+          Vercel Web Analytics. Ships its own "use client" directive, so it
+          imports straight into this Server Component with no wrapper. It
+          records page views and Core Web Vitals only — no cookies, no
+          cross-site identifier, and nothing member-specific is passed to it,
+          so no Passport, message, or verification data can reach Vercel
+          through this. Outside a Vercel deployment it renders nothing.
+        */}
+        <Analytics />
       </body>
     </html>
   );
