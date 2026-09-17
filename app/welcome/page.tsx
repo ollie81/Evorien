@@ -69,6 +69,12 @@ const HERO_CHIPS = [
   { icon: Award, label: "Reputation", wrapper: "bottom-[4%] right-[4%] -rotate-3" },
 ];
 
+// Below this many members the public counts are hidden in favour of the
+// early-access framing above — see the comment on that section. Raise or
+// lower it freely; it is purely a presentation threshold and never changes
+// what the numbers say.
+const PUBLIC_STATS_MIN_MEMBERS = 100;
+
 export default async function WelcomePage({
   searchParams,
 }: {
@@ -170,16 +176,51 @@ export default async function WelcomePage({
         </div>
       </section>
 
-      {/* Proof */}
+      {/*
+        Proof — but only once the numbers actually read as momentum.
+
+        Real counts are the right thing to show a stranger at scale. At five
+        members they do the opposite of their job: "5 Members" reads as an
+        empty room and costs signups, and the "Nothing fabricated" label
+        above them only drew more attention to how small they were. The
+        cold-start problem.
+
+        Inventing numbers is not an option here and never will be, so the
+        counts are simply withheld until they are persuasive on their own,
+        and until then this says what is true *and* appealing about being
+        early. The threshold flips this back automatically — nothing to
+        remember and no code change needed once the network grows.
+      */}
       <section className="space-y-3">
-        <p className="text-sm font-medium text-muted-foreground">Real numbers. Nothing fabricated.</p>
-        <Card>
-          <CardContent className="grid grid-cols-3 gap-6">
-            <StatTile value={stats.member_count} label="Members" />
-            <StatTile value={stats.active_project_count} label="Active projects" />
-            <StatTile value={stats.country_count} label="Countries" />
-          </CardContent>
-        </Card>
+        {stats.member_count >= PUBLIC_STATS_MIN_MEMBERS ? (
+          <>
+            <p className="text-sm font-medium text-muted-foreground">Real numbers. Nothing fabricated.</p>
+            <Card>
+              <CardContent className="grid grid-cols-3 gap-6">
+                <StatTile value={stats.member_count} label="Members" />
+                <StatTile value={stats.active_project_count} label="Active projects" />
+                <StatTile value={stats.country_count} label="Countries" />
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-medium text-muted-foreground">Early access</p>
+            <Card>
+              <CardContent className="space-y-6">
+                <p className="text-base">
+                  Ollieen is new. Passport numbers are issued in order and never reused — the
+                  people joining now hold the first ones, permanently.
+                </p>
+                <div className="grid gap-6 sm:grid-cols-3">
+                  <StatTile value="Free" label="To join and to build" />
+                  <StatTile value="Yours" label="Passport number, for good" />
+                  <StatTile value="Real" label="Every profile and project" />
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </section>
 
       {/* Trust grid */}
