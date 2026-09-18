@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUserId } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { redeemPendingInvite } from "@/actions/invites";
 
 export type OnboardingFormState = { error?: string } | undefined;
 
@@ -56,6 +57,12 @@ export async function completeOnboardingAction(
           : "Something went wrong creating your Passport. Please try again.",
     };
   }
+
+  // Claim any invite the new member arrived with. Runs after the profile
+  // write on purpose: the notification this sends names them, so it needs a
+  // name to exist. Never throws — see redeemPendingInvite — so a stale code
+  // can't strand someone on the last step of creating their Passport.
+  await redeemPendingInvite();
 
   revalidatePath("/", "layout");
   redirect("/");

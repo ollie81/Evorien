@@ -17,6 +17,9 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { RequestVerificationDialog } from "@/components/passport/request-verification-dialog";
 import { getMyLatestVerification } from "@/actions/verifications";
 import { AskAiBanner } from "@/components/ai/ask-ai-banner";
+import { InviteLinkCard } from "@/components/invite/invite-link-card";
+import { getMyInvite } from "@/lib/data/invites";
+import { getSiteOrigin } from "@/lib/site-url";
 
 export const metadata: Metadata = { title: "Passport" };
 
@@ -33,6 +36,11 @@ export default async function PassportPage() {
       getPendingConnectionRequests(profile.id),
       getMyLatestVerification(profile.id),
     ]);
+
+  // Fetched after the block above rather than inside it: both of these are
+  // presentational extras, and getMyInvite lazily creates a row on first call,
+  // which shouldn't be racing the rest of the page load.
+  const [invite, siteOrigin] = await Promise.all([getMyInvite(), getSiteOrigin()]);
 
   const displayName = profileDisplayName(profile);
 
@@ -113,6 +121,15 @@ export default async function PassportPage() {
         title="How can you strengthen your contribution profile?"
         subtitle="Ask Ollieen AI what to add to your Passport and where your skills are needed."
       />
+
+      {/* Sits directly above Connections on purpose: when that list is empty,
+          the way to do something about it is the next thing on screen. */}
+      {invite && (
+        <InviteLinkCard
+          url={`${siteOrigin}/join/${invite.code}`}
+          acceptedCount={invite.acceptedCount}
+        />
+      )}
 
       <section className="space-y-3">
         <SectionHeader

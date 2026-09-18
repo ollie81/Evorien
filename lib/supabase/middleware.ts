@@ -65,6 +65,13 @@ export async function updateSession(request: NextRequest) {
   // "no claims -> /welcome" bounce below before the page's own, more
   // specific "no session -> /forgot-password" check ever got to run.
   //
+  // /join/<code> is exempt for the same reason as /auth/callback: someone
+  // opening an invite link is by definition not signed in yet, so the generic
+  // "no claims -> /welcome" bounce below would throw away the invite before
+  // the page could show who sent it. It can't go in PUBLIC_PAGES either —
+  // that list is exact-match, and this path carries a code. The page itself
+  // handles the signed-in case by redirecting home.
+  //
   // /about, /privacy and /terms need a third kind of exemption: they must
   // render identically for anonymous crawlers, signed-out visitors, and
   // signed-in members alike, with no bounce in either direction. Putting
@@ -74,6 +81,7 @@ export async function updateSession(request: NextRequest) {
   if (
     pathname.startsWith("/api/") ||
     pathname === "/auth/callback" ||
+    pathname.startsWith("/join/") ||
     pathname === "/reset-password" ||
     pathname === "/about" ||
     pathname === "/privacy" ||
