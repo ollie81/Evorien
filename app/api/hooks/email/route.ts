@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const siteUrl = process.env.SITE_URL ?? "https://ollieen.com";
+  const siteUrl = process.env.SITE_URL ?? "https://www.ollieen.com";
 
   const email = renderNotificationEmail({
     type: typeof payload.type === "string" ? payload.type : "",

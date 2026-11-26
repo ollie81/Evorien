@@ -4,7 +4,7 @@ import type { MetadataRoute } from "next";
 // and isn't reachable by an anonymous crawler, so listing it here would
 // just be a broken link from Google's perspective.
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://ollieen.com";
+  const base = "https://www.ollieen.com";
   return [
     { url: `${base}/welcome`, changeFrequency: "weekly", priority: 1 },
     { url: `${base}/about`, changeFrequency: "monthly", priority: 0.8 },

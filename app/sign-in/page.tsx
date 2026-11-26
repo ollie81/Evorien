@@ -3,7 +3,7 @@ import { SignInForm } from "@/components/auth/sign-in-form";
 
 export const metadata: Metadata = {
   title: "Sign in",
-  alternates: { canonical: "https://ollieen.com/sign-in" },
+  alternates: { canonical: "https://www.ollieen.com/sign-in" },
 };
 
 export default async function SignInPage({

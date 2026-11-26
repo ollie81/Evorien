@@ -3,7 +3,7 @@ import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 
 export const metadata: Metadata = {
   title: "Forgot password",
-  alternates: { canonical: "https://ollieen.com/forgot-password" },
+  alternates: { canonical: "https://www.ollieen.com/forgot-password" },
 };
 
 export default async function ForgotPasswordPage({

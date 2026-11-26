@@ -6,7 +6,7 @@ import { headers } from "next/headers";
  * The origin Supabase Auth should redirect back to after email
  * confirmation, password recovery, or Google OAuth. Set SITE_URL in
  * Vercel's environment variables (Production) to Ollieen's real deployed
- * URL — https://ollieen.com once that domain is connected and verified
+ * URL — https://www.ollieen.com once that domain is connected and verified
  * (README: "Connect ollieen.com"), https://evorien.vercel.app until then
  * (the Vercel-assigned domain — unaffected by the product rename) — and
  * it becomes the source of truth — pinned, not inferred, so it can never

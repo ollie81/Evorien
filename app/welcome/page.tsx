@@ -17,8 +17,8 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
-  alternates: { canonical: "https://ollieen.com/welcome" },
-  openGraph: { title: TITLE, description: DESCRIPTION, url: "https://ollieen.com/welcome" },
+  alternates: { canonical: "https://www.ollieen.com/welcome" },
+  openGraph: { title: TITLE, description: DESCRIPTION, url: "https://www.ollieen.com/welcome" },
   twitter: { title: TITLE, description: DESCRIPTION },
 };
 
@@ -27,8 +27,8 @@ const WELCOME_JSON_LD = {
   "@type": "WebPage",
   name: TITLE,
   description: DESCRIPTION,
-  url: "https://ollieen.com/welcome",
-  isPartOf: { "@type": "WebSite", name: "Ollieen", url: "https://ollieen.com" },
+  url: "https://www.ollieen.com/welcome",
+  isPartOf: { "@type": "WebSite", name: "Ollieen", url: "https://www.ollieen.com" },
 };
 
 const PRODUCT_PILLARS = [

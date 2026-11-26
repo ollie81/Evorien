@@ -13,8 +13,8 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
-  alternates: { canonical: "https://ollieen.com/about" },
-  openGraph: { title: TITLE, description: DESCRIPTION, url: "https://ollieen.com/about" },
+  alternates: { canonical: "https://www.ollieen.com/about" },
+  openGraph: { title: TITLE, description: DESCRIPTION, url: "https://www.ollieen.com/about" },
   twitter: { title: TITLE, description: DESCRIPTION },
 };
 

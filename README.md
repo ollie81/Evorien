@@ -222,7 +222,9 @@ This is what to do when you're ready to put `ollieen.com` in front of it,
 without breaking the working deployment while you do.
 
 1. In Vercel, open your project -> **Settings -> Domains** -> add
-   `ollieen.com` (and `www.ollieen.com` if you want both). Vercel shows
+   both `www.ollieen.com` and `ollieen.com`. Make `www.ollieen.com` the
+   primary domain and set `ollieen.com` to redirect (308) to it — every
+   canonical URL, the sitemap and robots.txt use `www`. Vercel shows
    the exact DNS records to add at your domain registrar.
 
    > If `evorien.com` is still listed here from an earlier attempt to
@@ -233,12 +235,12 @@ without breaking the working deployment while you do.
    **Valid** — this also provisions SSL automatically, and can take
    anywhere from a few minutes to a few hours depending on DNS
    propagation.
-3. **Only once `ollieen.com` shows Valid in Vercel**, finish the cutover:
+3. **Only once `www.ollieen.com` shows Valid in Vercel**, finish the cutover:
    - Vercel -> **Project Settings -> Environment Variables** -> set
      `SITE_URL` (no `NEXT_PUBLIC_` prefix — see `.env.example`) to
-     `https://ollieen.com`, then redeploy.
+     `https://www.ollieen.com`, then redeploy.
    - Supabase -> **Authentication -> URL Configuration** -> change **Site
-     URL** to `https://ollieen.com`, and add `https://ollieen.com/**` to
+     URL** to `https://www.ollieen.com`, and add `https://www.ollieen.com/**` to
      **Redirect URLs**.
    - Keep the existing `your-app.vercel.app` entry in Redirect URLs, and
      don't remove the Vercel-assigned domain itself, until you've
@@ -253,7 +255,7 @@ without breaking the working deployment while you do.
 
 Every URL this app builds (auth redirects via `SITE_URL`,
 Open Graph/social-sharing metadata via `metadataBase` in `app/layout.tsx`)
-already targets `ollieen.com` in code or reads it from that one
+already targets `https://www.ollieen.com` in code or reads it from that one
 environment variable — there's nothing else to change once the domain
 itself is connected and verified.
 

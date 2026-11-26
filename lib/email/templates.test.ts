@@ -6,14 +6,14 @@ const base = {
   title: "New message",
   body: "Theodore sent you a message.",
   link: "/messages/abc",
-  siteUrl: "https://ollieen.com",
+  siteUrl: "https://www.ollieen.com",
 };
 
 describe("renderNotificationEmail", () => {
   it("builds an absolute link from the canonical site url", () => {
     const email = renderNotificationEmail(base);
-    expect(email.html).toContain("https://ollieen.com/messages/abc");
-    expect(email.text).toContain("https://ollieen.com/messages/abc");
+    expect(email.html).toContain("https://www.ollieen.com/messages/abc");
+    expect(email.text).toContain("https://www.ollieen.com/messages/abc");
   });
 
   it("uses the notification title as the subject", () => {
@@ -28,7 +28,7 @@ describe("renderNotificationEmail", () => {
   it("falls back to the site root rather than following an absolute link", () => {
     const email = renderNotificationEmail({ ...base, link: "https://evil.example.com/phish" });
     expect(email.html).not.toContain("evil.example.com");
-    expect(email.html).toContain('href="https://ollieen.com/"');
+    expect(email.html).toContain('href="https://www.ollieen.com/"');
   });
 
   it("refuses a protocol-relative link, which would leave the site", () => {
@@ -46,9 +46,9 @@ describe("renderNotificationEmail", () => {
   });
 
   it("tolerates a trailing slash on the site url without doubling it", () => {
-    const email = renderNotificationEmail({ ...base, siteUrl: "https://ollieen.com/" });
-    expect(email.html).toContain("https://ollieen.com/messages/abc");
-    expect(email.html).not.toContain("ollieen.com//messages");
+    const email = renderNotificationEmail({ ...base, siteUrl: "https://www.ollieen.com/" });
+    expect(email.html).toContain("https://www.ollieen.com/messages/abc");
+    expect(email.html).not.toContain("www.ollieen.com//messages");
   });
 
   it("omits the body paragraph when there is no body", () => {
@@ -59,7 +59,7 @@ describe("renderNotificationEmail", () => {
 
   it("always includes a way to turn the emails off", () => {
     const email = renderNotificationEmail(base);
-    expect(email.html).toContain("https://ollieen.com/settings");
-    expect(email.text).toContain("https://ollieen.com/settings");
+    expect(email.html).toContain("https://www.ollieen.com/settings");
+    expect(email.text).toContain("https://www.ollieen.com/settings");
   });
 });

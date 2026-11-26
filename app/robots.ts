@@ -1,17 +1,15 @@
 import type { MetadataRoute } from "next";
 
-// Everything under (app)/** requires a session and redirects an anonymous
-// crawler straight to /welcome anyway (see lib/supabase/middleware.ts) — so
-// there's no real content there for Google to index, only wasted crawl
-// budget on redirects. Only the genuinely public, signed-out pages are
-// listed as allowed.
+// Allow every crawler (search engines and AI tools) to read the whole site.
+// Signed-in routes still redirect anonymous visitors to /welcome, and pages
+// that must stay out of search results opt out with their own `robots`
+// metadata (e.g. app/join/[code]/page.tsx).
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/welcome", "/sign-in", "/sign-up", "/forgot-password", "/about", "/privacy", "/terms"],
-      disallow: "/",
+      allow: "/",
     },
-    sitemap: "https://ollieen.com/sitemap.xml",
+    sitemap: "https://www.ollieen.com/sitemap.xml",
   };
 }

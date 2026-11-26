@@ -6,7 +6,7 @@ const DESCRIPTION = "The terms that govern using Ollieen.";
 export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
-  alternates: { canonical: "https://ollieen.com/terms" },
+  alternates: { canonical: "https://www.ollieen.com/terms" },
   robots: { index: true, follow: true },
 };
 

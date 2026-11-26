@@ -6,7 +6,7 @@ const DESCRIPTION = "How Ollieen collects, uses, and protects member data.";
 export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
-  alternates: { canonical: "https://ollieen.com/privacy" },
+  alternates: { canonical: "https://www.ollieen.com/privacy" },
   robots: { index: true, follow: true },
 };
 
