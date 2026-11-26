@@ -3,7 +3,7 @@ export interface NotificationEmailInput {
   title: string;
   body: string | null;
   link: string | null;
-  /** Canonical origin, e.g. https://ollieen.com. Passed in rather than derived from the request: an email must always point at the real site, never at whatever host happened to call the webhook. */
+  /** Canonical origin, e.g. https://www.ollieen.com. Passed in rather than derived from the request: an email must always point at the real site, never at whatever host happened to call the webhook. */
   siteUrl: string;
 }
 

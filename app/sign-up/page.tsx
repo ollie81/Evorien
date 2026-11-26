@@ -3,7 +3,7 @@ import { SignUpForm } from "@/components/auth/sign-up-form";
 
 export const metadata: Metadata = {
   title: "Create your Passport",
-  alternates: { canonical: "https://ollieen.com/sign-up" },
+  alternates: { canonical: "https://www.ollieen.com/sign-up" },
 };
 
 export default function SignUpPage() {

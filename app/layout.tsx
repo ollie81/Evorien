@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 });
 
 const SITE_NAME = "Ollieen";
-const SITE_URL = "https://ollieen.com";
+const SITE_URL = "https://www.ollieen.com";
 // Concrete, on-brand positioning — not the vaguer "digital foundation for a
 // network of high-autonomy communities" line this used to carry. Kept in
 // sync with the hero copy on /welcome; this is what shows up as the meta
